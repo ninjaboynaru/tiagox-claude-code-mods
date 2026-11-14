@@ -1,0 +1,10 @@
+{
+	"name": "prompt-timestamp",
+	"description": "Adds a date line to every prompt, a timestamp beside every terminal message, and a timestamp to every Claude response.",
+	"author": {
+		"name": "Thiago Pereira"
+	},
+	"license": "MIT",
+	"keywords": ["date", "time", "timestamp", "timezone", "prompt", "hooks"],
+	"types": "./types/index.d.ts"
+}

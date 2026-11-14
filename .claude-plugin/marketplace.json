@@ -1,0 +1,22 @@
+{
+	"name": "tiagox-claude-code-mods",
+	"description": "My personal Claude Code plugin marketplace.",
+	"owner": {
+		"name": "Thiago Pereira"
+	},
+	"plugins": [
+		{
+			"name": "prompt-timestamp",
+			"source": "./plugins/prompt-timestamp",
+			"description": "Adds a date line to every prompt, a timestamp beside every terminal message, and a timestamp to every Claude response."
+		},
+		{
+			"name": "tiagox-agent-config",
+			"source": {
+				"source": "github",
+				"repo": "ninjaboynaru/tiagox-agent-config"
+			},
+			"description": "A set of high level Claude Code skills to write structured and consistent agent instructions."
+		}
+	]
+}
