@@ -29,7 +29,7 @@ The time is on a 24-hour clock, in the time zone the machine reports.
 
 ### Timestamp above every terminal row
 
-In the terminal, each prompt row and each Claude response row has a timestamp on its own line above it, in the machine's time zone, drawn in pastel blue for your prompts and pastel red for Claude's responses:
+In the terminal, each prompt row and each Claude response row has a timestamp on its own line above it, in the machine's time zone, drawn in pastel blue for your prompts, pastel red for Claude's responses, and pastel yellow for rows that arrive as a prompt without you typing them, such as a notification that a subagent finished:
 
 ```text
 14:03:05 CDT

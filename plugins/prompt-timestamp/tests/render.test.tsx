@@ -3,7 +3,7 @@ import { describe, expect, mock, test, tier } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 
 import { machineZone } from '../hooks/date-line.js'
-import { ASSISTANT_GUTTER_COLOR, USER_GUTTER_COLOR } from '../hooks/gutter.js'
+import { ASSISTANT_GUTTER_COLOR, NOTICE_GUTTER_COLOR, USER_GUTTER_COLOR } from '../hooks/gutter.js'
 import { gutterLabelOf } from '../hooks/gutter-label.js'
 import { engineRowOf } from './engine-row.js'
 import { GUTTER_TODAY_PATTERN, INSTANT, promptRowOf, responseRowOf, textBlock } from './fixtures.js'
@@ -87,6 +87,22 @@ describe('the gutter color', () => {
 
 		expect((await userUi.find({ type: 'Text', text: GUTTER_TODAY_PATTERN }))?.props.color).toBe(USER_GUTTER_COLOR)
 		expect((await assistantUi.find({ type: 'Text', text: GUTTER_TODAY_PATTERN }))?.props.color).toBe(ASSISTANT_GUTTER_COLOR)
+	})
+
+	test('a task notification row stamp is yellow, not the blue of the user', async ($, on) => {
+		mock.clock(on, { now: INSTANT })
+		on('ui.render', engineRowOf)
+		await $.session.append(promptRowOf('n1', 'Agent finished'))
+
+		const noticeUi = await $.ui.mount({
+			plugin: 'prompt-timestamp',
+			surface: 'terminal',
+			component: 'UserMessage',
+			requestId: 'n1',
+			props: { ...USER_PROPS, text: 'Agent finished', origin: { kind: 'task-notification' } },
+		})
+
+		expect((await noticeUi.find({ type: 'Text', text: GUTTER_TODAY_PATTERN }))?.props.color).toBe(NOTICE_GUTTER_COLOR)
 	})
 })
 

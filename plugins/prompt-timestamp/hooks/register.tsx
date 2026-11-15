@@ -6,7 +6,7 @@ import {
 	drawWithGutter,
 	recordedGutterLabelOf,
 	savedGutterLabelOfText,
-	USER_GUTTER_COLOR,
+	userRowGutterColorOf,
 } from './gutter.js'
 import { rememberRowTime } from './row-times.js'
 import { hasStamp, stampLastTextBlock, stampLineOf, withoutAnyStampLine, withoutStamp } from './stamp-line.js'
@@ -60,7 +60,7 @@ export function register(on: On): void {
 			? await next({ ...e, props: { ...e.props, text: withoutStamp('Sent time', e.props.text) } })
 			: await next(e)
 
-		return drawWithGutter($, e, row, label, USER_GUTTER_COLOR)
+		return drawWithGutter($, e, row, label, userRowGutterColorOf(e.props.origin))
 	})
 
 	on('ui.render', { component: 'AssistantMessage', surface: 'terminal' }, async ($, e, next) => {

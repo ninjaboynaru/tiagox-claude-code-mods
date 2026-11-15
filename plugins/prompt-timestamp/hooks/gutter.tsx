@@ -1,4 +1,4 @@
-import type { EngineInterface, RenderElement, RenderInputOf } from 'claude-code'
+import type { EngineInterface, PromptOrigin, RenderElement, RenderInputOf } from 'claude-code'
 
 import { machineZone } from './date-line.js'
 import { gutterLabelOf, savedGutterLabelOf } from './gutter-label.js'
@@ -9,6 +9,13 @@ type RowInput = RenderInputOf<'UserMessage', 'terminal'> | RenderInputOf<'Assist
 
 export const USER_GUTTER_COLOR = '#a6c8f4'
 export const ASSISTANT_GUTTER_COLOR = '#f4a6a6'
+export const NOTICE_GUTTER_COLOR = '#f4e3a6'
+
+export function userRowGutterColorOf(origin: PromptOrigin): string {
+	const isFromThePerson = origin.kind === 'composer' || origin.kind === 'bridge'
+
+	return isFromThePerson ? USER_GUTTER_COLOR : NOTICE_GUTTER_COLOR
+}
 
 export async function recordedGutterLabelOf($: EngineInterface, rowId: string): Promise<string | null> {
 	const rowTimeMs = await rowTimeOf($, rowId)
