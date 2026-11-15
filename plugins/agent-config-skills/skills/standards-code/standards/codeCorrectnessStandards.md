@@ -192,3 +192,162 @@ New code is deployed while data written by the old code and clients built agains
 		return savedSettings.colorScheme ?? savedSettings.theme ?? DEFAULT_COLOR_SCHEME
 	}
 ```
+
+## Rule 9: Put time limits and resource limits on outside inputs and outside APIs
+
+An outside API, such as a web service or a database, can stall and never answer, and an outside input can be far larger than the code expects. Give every call to an outside API a time limit, and give every outside input a resource limit, so that one slow API or one huge input cannot hold up or exhaust the program.
+
+### Clause A: Give every call to an outside API a time limit
+
+Set the time limit on the call or on the client that makes it, and handle a time-out like any other failure of the call.
+
+**Example 1 - Bad** (The call has no time limit, so a weather service that stops answering holds the request forever):
+
+```typescript
+	const response = await fetch(`${WEATHER_API_URL}/forecast?city=${encodeURIComponent(city)}`)
+```
+
+**Example 1 - Good** (The `signal` option ends the call with a time-out error after `WEATHER_REQUEST_TIMEOUT_MS`):
+
+```typescript
+	const response = await fetch(`${WEATHER_API_URL}/forecast?city=${encodeURIComponent(city)}`, {
+		signal: AbortSignal.timeout(WEATHER_REQUEST_TIMEOUT_MS),
+	})
+```
+
+**Example 2 - Bad** (The pool sets no connection time-out and no statement time-out, so a stuck database holds every request that uses it):
+
+```typescript
+	const pool = new Pool({ connectionString: databaseUrl })
+```
+
+**Example 2 - Good** (The pool gives up on a connection after `DATABASE_CONNECTION_TIMEOUT_MS` and ends any statement that runs longer than `DATABASE_STATEMENT_TIMEOUT_MS`):
+
+```typescript
+	const pool = new Pool({
+		connectionString: databaseUrl,
+		connectionTimeoutMillis: DATABASE_CONNECTION_TIMEOUT_MS,
+		statement_timeout: DATABASE_STATEMENT_TIMEOUT_MS,
+	})
+```
+
+### Clause B: Give every outside input a resource limit
+
+Set a maximum size for the input, such as a number of bytes, and enforce it before the program reads the whole input into memory or while it reads.
+
+**Example 1 - Bad** (The upload handler sets no size limit, so one huge file fills the memory of the program):
+
+```typescript
+	const upload = multer({ storage: multer.memoryStorage() })
+```
+
+**Example 1 - Good** (The `fileSize` limit makes the handler reject any file larger than `MAX_UPLOAD_BYTES`):
+
+```typescript
+	const upload = multer({
+		storage: multer.memoryStorage(),
+		limits: { fileSize: MAX_UPLOAD_BYTES },
+	})
+```
+
+**Example 2 - Bad** (The whole import file is read into memory with no check of its size):
+
+```typescript
+	const importFileText = await readFile(importFilePath, 'utf8')
+```
+
+**Example 2 - Good** (The code reads the file size first and rejects a file that is over the limit):
+
+```typescript
+	const importFileStats = await stat(importFilePath)
+	const isImportFileTooLarge = importFileStats.size > MAX_IMPORT_FILE_BYTES
+	if (isImportFileTooLarge) {
+		throw new ValidationError('The import file is larger than the allowed size.')
+	}
+	const importFileText = await readFile(importFilePath, 'utf8')
+```
+
+## Rule 10: Clean up on every way out
+
+Whatever the code creates or opens for temporary use, such as a temporary file, a file handle, a database connection, a lock, or a helper process, it must remove or close after success, after an error, and after a stop. Put the cleanup where it runs on every way out of the code, and never only at the end of the successful path.
+
+### Clause A: Clean up after success and after an error
+
+Put the cleanup in a `finally` block, or in the language's equivalent, so that it runs whether the code succeeds or throws.
+
+**Example 1 - Bad** (If `uploadReport` throws, the line that removes the file never runs, so the temporary file stays on disk):
+
+```typescript
+	const temporaryFilePath = path.join(os.tmpdir(), `${randomUUID()}.csv`)
+	await writeFile(temporaryFilePath, csvText)
+	await uploadReport(temporaryFilePath)
+	await rm(temporaryFilePath)
+```
+
+**Example 1 - Good** (The `finally` block removes the file after success and after an error):
+
+```typescript
+	const temporaryFilePath = path.join(os.tmpdir(), `${randomUUID()}.csv`)
+	try {
+		await writeFile(temporaryFilePath, csvText)
+		await uploadReport(temporaryFilePath)
+	} finally {
+		await rm(temporaryFilePath, { force: true })
+	}
+```
+
+**Example 2 - Bad** (If the query throws, the connection is never released, and enough failures leave the pool with no connection to give):
+
+```typescript
+	const connection = await pool.connect()
+	const queryResult = await connection.query('SELECT id, total FROM orders WHERE customer_id = $1', [customerId])
+	connection.release()
+	return queryResult.rows
+```
+
+**Example 2 - Good** (The `finally` block releases the connection after success and after an error):
+
+```typescript
+	const connection = await pool.connect()
+	try {
+		const queryResult = await connection.query('SELECT id, total FROM orders WHERE customer_id = $1', [customerId])
+		return queryResult.rows
+	} finally {
+		connection.release()
+	}
+```
+
+### Clause B: Clean up after a stop
+
+A `finally` block does not run when a signal ends the process, so handle the stop signals wherever the code holds something that must be removed.
+
+**Example 1 - Bad** (The `finally` block does not run when a signal stops the process, so the work folder stays on disk):
+
+```typescript
+	const workDirectoryPath = await mkdtemp(path.join(os.tmpdir(), 'export-'))
+	try {
+		await runExport(workDirectoryPath)
+	} finally {
+		await rm(workDirectoryPath, { recursive: true, force: true })
+	}
+```
+
+**Example 1 - Good** (The stop handler removes the work folder before the process exits, and the `finally` block removes the handlers once the export is done):
+
+```typescript
+	const workDirectoryPath = await mkdtemp(path.join(os.tmpdir(), 'export-'))
+	const removeWorkDirectory = () => rm(workDirectoryPath, { recursive: true, force: true })
+	const stopExport = async (): Promise<void> => {
+		await removeWorkDirectory()
+		process.exit(1)
+	}
+	process.once('SIGINT', stopExport)
+	process.once('SIGTERM', stopExport)
+	try {
+		await runExport(workDirectoryPath)
+	} finally {
+		process.off('SIGINT', stopExport)
+		process.off('SIGTERM', stopExport)
+		await removeWorkDirectory()
+	}
+```
