@@ -6,6 +6,8 @@ export const DATE_LINE_PATTERN =
 	/^Current date and time: [A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{4} \d{2}:\d{2}:\d{2} \S+ \| Timezone: \S+ \(UTC[+-]\d{2}:\d{2}\)$/
 export const RESPONSE_STAMP_LINE_PATTERN =
 	/^\[Response time: [A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{4} \d{2}:\d{2}:\d{2} \S+\]$/
+export const SENT_STAMP_LINE_PATTERN =
+	/^\[Sent time: [A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{4} \d{2}:\d{2}:\d{2} \S+\]$/
 export const GUTTER_TODAY_PATTERN = /^\d{2}:\d{2}:\d{2} \S+$/
 
 export function textBlock(text: string): ApiContentBlock {

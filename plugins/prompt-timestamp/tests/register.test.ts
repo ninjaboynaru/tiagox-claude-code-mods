@@ -1,7 +1,16 @@
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
 
 import { dateLineOf } from '../hooks/date-line.js'
-import { CHICAGO_LINE, DATE_LINE_PATTERN, INSTANT, RESPONSE_STAMP_LINE_PATTERN, responseRowOf, textBlock } from './fixtures.js'
+import {
+	CHICAGO_LINE,
+	DATE_LINE_PATTERN,
+	INSTANT,
+	promptRowOf,
+	RESPONSE_STAMP_LINE_PATTERN,
+	responseRowOf,
+	SENT_STAMP_LINE_PATTERN,
+	textBlock,
+} from './fixtures.js'
 
 tier('user')
 
@@ -51,5 +60,22 @@ describe('response stamping', () => {
 		expect(lines.at(-1)).toMatch(RESPONSE_STAMP_LINE_PATTERN)
 		expect(lines.at(-1)).toContain('2026')
 		expect(lines[0]).toBe('Done.')
+	})
+})
+
+describe('prompt stamping', () => {
+	test('a user row ends with exactly one sent line, replacing an imitated one', async ($, on) => {
+		mock.clock(on, { now: INSTANT })
+		const session = mock.session(on)
+		const imitated = 'hello\n\n[Sent time: Mon Jan 1 2024 01:02:03 PST]'
+
+		await $.session.append(promptRowOf('p1', imitated))
+
+		const block = session.appended()[0]?.message.content[0]
+		const lines = typeof block?.text === 'string' ? block.text.split('\n') : []
+		expect(lines.filter(line => line.startsWith('[Sent time:'))).toHaveLength(1)
+		expect(lines.at(-1)).toMatch(SENT_STAMP_LINE_PATTERN)
+		expect(lines.at(-1)).toContain('2026')
+		expect(lines[0]).toBe('hello')
 	})
 })

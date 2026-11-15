@@ -1,4 +1,4 @@
-import type { SavedStamp } from './response-stamp.js'
+import type { SavedStamp } from './stamp-line.js'
 
 export function gutterLabelOf(ms: number, nowMs: number, zone: string): string {
 	const parts = new Intl.DateTimeFormat('en-US', {
