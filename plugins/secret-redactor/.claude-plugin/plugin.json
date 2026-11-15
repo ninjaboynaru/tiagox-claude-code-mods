@@ -1,0 +1,9 @@
+{
+	"name": "secret-redactor",
+	"description": "Hides the secrets in your MCP server configuration and .env files from the agent by redacting them from tool results.",
+	"author": {
+		"name": "Thiago Pereira"
+	},
+	"license": "MIT",
+	"keywords": ["mcp", "env", "secrets", "redaction", "security", "hooks"]
+}

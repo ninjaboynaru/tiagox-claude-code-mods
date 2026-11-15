@@ -26,6 +26,7 @@ claude plugin install <plugin>@tiagox-claude-code-mods
 | --- | --- |
 | [prompt-timestamp](plugins/prompt-timestamp) | Adds a date line to every prompt, a timestamp beside every terminal message, and a timestamp to every Claude response. |
 | [session-config-line](plugins/session-config-line) | Shows a context usage bar, the model, the effort level, and the usage limits above the prompt hint line. |
+| [secret-redactor](plugins/secret-redactor) | Hides the secrets in your MCP server configuration and .env files from the agent by redacting them from tool results. |
 | [agent-config-skills](plugins/agent-config-skills) | A set of high level Claude Code skills to write structured and consistent agent instructions. |
 
 ## Layout

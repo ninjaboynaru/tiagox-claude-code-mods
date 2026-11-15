@@ -16,6 +16,11 @@
 			"description": "Shows a context usage bar, the model, the effort level, and the usage limits above the prompt hint line."
 		},
 		{
+			"name": "secret-redactor",
+			"source": "./plugins/secret-redactor",
+			"description": "Hides the secrets in your MCP server configuration and .env files from the agent by redacting them from tool results."
+		},
+		{
 			"name": "agent-config-skills",
 			"source": "./plugins/agent-config-skills",
 			"description": "A set of high level Claude Code skills to write structured and consistent agent instructions."
