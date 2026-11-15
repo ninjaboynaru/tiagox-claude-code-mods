@@ -24,20 +24,21 @@ export async function savedGutterLabelOfText($: EngineInterface, label: StampLab
 	return savedGutterLabelOf(saved, await $.clock.now(), machineZone())
 }
 
-export async function drawWithGutter($: EngineInterface, e: RowInput, row: RenderElement, label: string | null, color: string): Promise<RenderElement> {
+export function drawWithGutter($: EngineInterface, e: RowInput, row: RenderElement, label: string | null, color: string): RenderElement {
+	if (label === null) return row
+
 	const { Box, Text } = $.ui.resolve(e)
-	const nowMs = await $.clock.now()
-	const blankLabel = gutterLabelOf(nowMs, nowMs, machineZone())
-	const shownLabel = label ?? ''
-	const columnCount = Math.max(blankLabel.length, shownLabel.length) + 1
 	const isContinuationBlock = e.component === 'AssistantMessage' && !e.props.isFirstOfReply
+	const rowTopMargin = isContinuationBlock ? 0 : 1
 
 	return (
-		<Box flexDirection="row">
-			<Box width={columnCount} flexShrink={0} marginTop={isContinuationBlock ? 0 : 1}>
-				<Text color={color}>{shownLabel}</Text>
+		<Box flexDirection="column">
+			<Box marginTop={rowTopMargin}>
+				<Text color={color}>
+					{label}
+				</Text>
 			</Box>
-			{row}
+			<Box marginTop={-rowTopMargin}>{row}</Box>
 		</Box>
 	)
 }

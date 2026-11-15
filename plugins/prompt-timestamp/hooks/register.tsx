@@ -9,7 +9,7 @@ import {
 	USER_GUTTER_COLOR,
 } from './gutter.js'
 import { rememberRowTime } from './row-times.js'
-import { hasStamp, stampLastTextBlock, stampLineOf, withoutStamp } from './stamp-line.js'
+import { hasStamp, stampLastTextBlock, stampLineOf, withoutAnyStampLine, withoutStamp } from './stamp-line.js'
 
 export function register(on: On): void {
 	on('prompt.submit', async ($, e, next) => {
@@ -44,6 +44,13 @@ export function register(on: On): void {
 		await rememberRowTime($, e.uuid, nowMs)
 
 		return next({ ...e, message: { ...e.message, content: stampedContent } })
+	}).catch(($, e, next) => next(e))
+
+	on('prompt.change', { origin: { kind: 'engine' } }, async ($, e, next) => {
+		const stripped = withoutAnyStampLine('Sent time', e.text)
+		if (stripped !== e.text.trimEnd()) await $.prompt.fill({ text: stripped, mode: 'replace' })
+
+		return next(e)
 	}).catch(($, e, next) => next(e))
 
 	on('ui.render', { component: 'UserMessage', surface: 'terminal' }, async ($, e, next) => {

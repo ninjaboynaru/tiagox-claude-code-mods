@@ -29,10 +29,12 @@ describe('the gutter', () => {
 			props: USER_PROPS,
 		})
 
-		expect((await ui.find({ type: 'Text', text: GUTTER_TODAY_PATTERN }))?.text).toBe(
+		const texts = await ui.findAll({ type: 'Text' })
+
+		expect(texts.map((text) => text.text)).toEqual([
 			gutterLabelOf(INSTANT, INSTANT, machineZone()),
-		)
-		expect((await ui.find({ type: 'Text', text: /engine/ }))?.text).toBe('engine')
+			'engine',
+		])
 	})
 
 	test('an assistant row shows its time and hides the stamp line from the engine row', async ($, on) => {
@@ -53,9 +55,10 @@ describe('the gutter', () => {
 			props: { ...ASSISTANT_PROPS, text: `Done.\n\n${SAVED_STAMP_LINE}` },
 		})
 
-		expect((await ui.find({ type: 'Text', text: GUTTER_TODAY_PATTERN }))?.text).toBe(
+		expect((await ui.findAll({ type: 'Text' })).map((text) => text.text)).toEqual([
 			gutterLabelOf(INSTANT, INSTANT, machineZone()),
-		)
+			'engine',
+		])
 		expect(seenTexts.at(-1)).toBe('Done.')
 	})
 })
@@ -106,7 +109,7 @@ describe('a row with no recorded time, as when a session is resumed', () => {
 		expect((await ui.find({ type: 'Text', text: /09:15:30/ }))?.text).toBe('Nov 13 09:15:30 CST')
 	})
 
-	test('draws a blank gutter and leaves the text alone when the saved line is malformed', async ($, on) => {
+	test('draws no stamp line and leaves the text alone when the saved line is malformed', async ($, on) => {
 		mock.clock(on, { now: INSTANT })
 		on('ui.render', engineRowOf)
 		const malformedLines = [
@@ -119,8 +122,7 @@ describe('a row with no recorded time, as when a session is resumed', () => {
 		for (const malformedLine of malformedLines) {
 			const ui = await mountSavedRow($, `Done.\n\n${malformedLine}`, malformedLine)
 
-			expect(await ui.find({ type: 'Text', text: /\d{2}:\d{2}:\d{2}/ })).toBeUndefined()
-			expect((await ui.find({ type: 'Text', text: /engine/ }))?.text).toBe('engine')
+			expect((await ui.findAll({ type: 'Text' })).map((text) => text.text)).toEqual(['engine'])
 		}
 	})
 

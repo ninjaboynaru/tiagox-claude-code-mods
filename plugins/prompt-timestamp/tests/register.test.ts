@@ -1,6 +1,7 @@
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
 
 import { dateLineOf } from '../hooks/date-line.js'
+import { withoutAnyStampLine } from '../hooks/stamp-line.js'
 import {
 	CHICAGO_LINE,
 	DATE_LINE_PATTERN,
@@ -77,5 +78,27 @@ describe('prompt stamping', () => {
 		expect(lines.at(-1)).toMatch(SENT_STAMP_LINE_PATTERN)
 		expect(lines.at(-1)).toContain('2026')
 		expect(lines[0]).toBe('hello')
+	})
+
+	test('a resent user row drops an old sent line from the middle and ends with only the new one', async ($, on) => {
+		mock.clock(on, { now: INSTANT })
+		const session = mock.session(on)
+		const resent = 'hello\n\n[Sent time: Mon Jan 1 2024 01:02:03 PST]\nmore'
+
+		await $.session.append(promptRowOf('p2', resent))
+
+		const block = session.appended()[0]?.message.content[0]
+		const lines = typeof block?.text === 'string' ? block.text.split('\n') : []
+		expect(lines.filter(line => line.startsWith('[Sent time:'))).toHaveLength(1)
+		expect(lines.at(-1)).toMatch(SENT_STAMP_LINE_PATTERN)
+		expect(lines.at(-1)).toContain('2026')
+		expect(lines.slice(0, -2)).toEqual(['hello', 'more'])
+	})
+})
+
+describe('unqueued draft', () => {
+	test('the sent line and its blank line are removed, and an incomplete line is left alone', async () => {
+		expect(withoutAnyStampLine('Sent time', 'hello\n\n[Sent time: Mon Jan 1 2024 01:02:03 PST]')).toBe('hello')
+		expect(withoutAnyStampLine('Sent time', 'hello\n\n[Sent time: Mon Jan 1 2024')).toBe('hello\n\n[Sent time: Mon Jan 1 2024')
 	})
 })

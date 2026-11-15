@@ -6,15 +6,22 @@ export type StampLabel = 'Response time' | 'Sent time'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+function stampSourceOf(label: StampLabel): string {
+	return String.raw`\[${label}: [A-Z][a-z]{2} ([A-Z][a-z]{2}) (\d{1,2}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) ([A-Za-z0-9+:-]{1,10})\]`
+}
+
 function trailingStampPatternOf(label: StampLabel): RegExp {
-	return new RegExp(
-		String.raw`(?:^|\n)[ \t]*\[${label}: [A-Z][a-z]{2} ([A-Z][a-z]{2}) (\d{1,2}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) ([A-Za-z0-9+:-]{1,10})\]\s*$`,
-	)
+	return new RegExp(String.raw`(?:^|\n)[ \t]*${stampSourceOf(label)}\s*$`)
 }
 
 const TRAILING_STAMP_PATTERNS: Record<StampLabel, RegExp> = {
 	'Response time': trailingStampPatternOf('Response time'),
 	'Sent time': trailingStampPatternOf('Sent time'),
+}
+
+const STAMP_LINE_PATTERNS: Record<StampLabel, RegExp> = {
+	'Response time': new RegExp(String.raw`^[ \t]*${stampSourceOf('Response time')}\s*$`),
+	'Sent time': new RegExp(String.raw`^[ \t]*${stampSourceOf('Sent time')}\s*$`),
 }
 
 export type SavedStamp = {
@@ -37,8 +44,21 @@ export function withoutStamp(label: StampLabel, text: string): string {
 	return text.replace(TRAILING_STAMP_PATTERNS[label], '').trimEnd()
 }
 
+export function withoutAnyStampLine(label: StampLabel, text: string): string {
+	const kept: string[] = []
+	for (const line of text.split('\n')) {
+		if (!STAMP_LINE_PATTERNS[label].test(line)) {
+			kept.push(line)
+			continue
+		}
+		if (kept.at(-1)?.trim() === '') kept.pop()
+	}
+
+	return kept.join('\n').trimEnd()
+}
+
 export function withStamp(label: StampLabel, text: string, stampLine: string): string {
-	const unstamped = withoutStamp(label, text)
+	const unstamped = withoutAnyStampLine(label, text)
 	if (unstamped === '') return stampLine
 
 	return `${unstamped}\n\n${stampLine}`

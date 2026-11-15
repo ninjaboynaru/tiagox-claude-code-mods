@@ -1,6 +1,6 @@
 # prompt-timestamp
 
-Adds a date line to every prompt, a timestamp beside every terminal message, and a timestamp to every Claude response.
+Adds a date line to every prompt, a timestamp above every terminal message, and a timestamp to every Claude response.
 
 This README follows the [Standard Readme](https://github.com/RichardLitt/standard-readme) specification.
 
@@ -27,9 +27,9 @@ Current date and time: Sun Sep 20 2026 14:03:05 CDT | Timezone: America/Chicago 
 
 The time is on a 24-hour clock, in the time zone the machine reports.
 
-### Timestamp beside every terminal row
+### Timestamp above every terminal row
 
-In the terminal, each prompt row and each Claude response row has a timestamp at its left, in the machine's time zone, drawn in pastel blue for your prompts and pastel red for Claude's responses:
+In the terminal, each prompt row and each Claude response row has a timestamp on its own line above it, in the machine's time zone, drawn in pastel blue for your prompts and pastel red for Claude's responses:
 
 ```text
 14:03:05 CDT
@@ -56,13 +56,13 @@ Each message you send also gets a line like this one at the end of its saved tex
 [Sent time: Sun Sep 20 2026 14:03:05 CDT]
 ```
 
-It follows the same rules as the response line: an existing trailing line in this exact format is replaced, never doubled, and a message with no text and a message from a subagent are left as they are. The terminal hides the line from the displayed message. A message that Claude Code refuses to rewrite is saved without the line.
+It follows the same rules as the response line: an existing trailing line in this exact format is replaced, never doubled, and a message with no text and a message from a subagent are left as they are. The terminal hides the line from the displayed message. A message that Claude Code refuses to rewrite is saved without the line. When Esc puts a sent message back into the prompt box, the plugin removes the line from the box.
 
 ## Resumed sessions
 
-The plugin keeps each row's time in memory, so it does not survive a restart. When a session is resumed, a prompt row or a response row recovers its timestamp from the saved `[Sent time: ...]` or `[Response time: ...]` line, shown as written (clock time and zone abbreviation, not converted), with the month and day when it is from an earlier day. A line that does not match the format exactly is ignored, the row gets a blank timestamp, and the line stays visible.
+The plugin keeps each row's time in memory, so it does not survive a restart. When a session is resumed, a prompt row or a response row recovers its timestamp from the saved `[Sent time: ...]` or `[Response time: ...]` line, shown as written (clock time and zone abbreviation, not converted), with the month and day when it is from an earlier day. A line that does not match the format exactly is ignored, the row gets no timestamp, and the line stays visible.
 
-Prompt rows saved before this plugin added the `[Sent time: ...]` line get a blank timestamp. A prompt row also draws blank for about half a second after it is sent, until its time is recorded.
+Prompt rows saved before this plugin added the `[Sent time: ...]` line get no timestamp. A prompt row also draws without one for about half a second after it is sent, until its time is recorded.
 
 ## Development
 
