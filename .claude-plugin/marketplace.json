@@ -11,6 +11,11 @@
 			"description": "Adds a date line to every prompt, a timestamp beside every terminal message, and a timestamp to every Claude response."
 		},
 		{
+			"name": "session-config-line",
+			"source": "./plugins/session-config-line",
+			"description": "Shows a context usage bar, the model, the effort level, and the usage limits above the prompt hint line."
+		},
+		{
 			"name": "tiagox-agent-config",
 			"source": {
 				"source": "github",

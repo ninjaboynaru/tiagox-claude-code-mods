@@ -1,0 +1,10 @@
+{
+	"name": "session-config-line",
+	"description": "Shows a context usage bar, the model, the effort level, and the usage limits above the prompt hint line.",
+	"author": {
+		"name": "Thiago Pereira"
+	},
+	"license": "MIT",
+	"keywords": ["context", "model", "effort", "usage", "limits", "prompt"],
+	"types": "./types/index.d.ts"
+}
