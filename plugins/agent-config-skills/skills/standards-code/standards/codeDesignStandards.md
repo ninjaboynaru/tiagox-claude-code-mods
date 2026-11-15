@@ -355,7 +355,6 @@ Apply DRY to values as well as logic. When several occurrences of a value repres
 Before implementing any helper, utility function, or piece of logic, check the project's shared utilities and common code. Look in common locations such as `src/utilities`, `utils`, and `helpers`. Common operations such as safe file path conversion, file and directory existence checks, directory creation, math, and cryptography may already be implemented there, and so may operations specific to the package's domain. A package that renders schematic designs, for example, might keep its common rendering operations in a folder called `renderingUtilities` or `rendering`. Writing a duplicate creates inconsistency and a maintenance burden.
 
 When the utility you need does not exist and is reusable across the codebase as it stands today, create it in the shared location. Do not create a shared utility for a reuse situation that does not exist yet.
-
 ### Clause A: Use the shared utility that already exists
 
 **Example 1 - Bad** (The module writes its own directory helper, although the project's shared `utils/fileSystem` module already exports one):
@@ -583,4 +582,140 @@ Write code that is reasonably performant. Avoid work that is plainly wasteful, s
 ```typescript
 	const customerIds = orders.map(order => order.customerId)
 	const customers = await customerRepository.findByIds(customerIds)
+```
+
+## Rule 13: Use a well-established library for complex common behavior
+
+Use a well-established, trusted library for complex common behavior, and do not write your own logic for it. Such a library has already met more edge cases, bugs, and attacks than new code will, and its maintainers carry the cost of keeping it correct. Write your own logic for a part of the behavior only when the library cannot do that part at all, as clause B describes.
+
+### Clause A: Use a well-established library instead of your own logic
+
+Complex common behavior is behavior that many programs need and that is easy to get subtly wrong. It includes these kinds, and others like them:
+
+- HTTP routing and request parsing
+- Logging
+- Date and time arithmetic
+- Parsing of standard formats, such as CSV, YAML, and XML
+- Cryptography
+
+A library is well established and trusted when it has all of these:
+
+- **Wide use**: Many other projects depend on it.
+- **A long history of use**: It has been in use for years.
+- **Active maintenance**: It still gets releases and security fixes.
+- **A known maintainer**: A named person, team, or organization stands behind it.
+
+Small, simple logic does not call for a library. Write logic of a few lines that has no edge cases yourself, such as keeping a number between a minimum and a maximum, because a dependency costs more than that code.
+
+**Example 1 - Bad** (The code matches the method and path by hand, so every case a router already covers, such as decoding the product ID in the path, becomes this code's job):
+
+```typescript
+	import { createServer } from 'node:http'
+
+	const server = createServer((request, response) => {
+		const requestPath = (request.url ?? '').split('?')[0]
+		const pathSegments = requestPath.split('/').filter(pathSegment => pathSegment !== '')
+		const isProductLookup = request.method === 'GET' && pathSegments.length === 2 && pathSegments[0] === 'products'
+		if (!isProductLookup) {
+			response.writeHead(404).end()
+			return
+		}
+
+		const product = findProduct(pathSegments[1])
+		if (!product) {
+			response.writeHead(404).end()
+			return
+		}
+		response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(product))
+	})
+	server.listen(3000)
+```
+
+**Example 1 - Good** (Express matches the method and path, decodes the product ID, and answers an unmatched request with a 404):
+
+```typescript
+	import express from 'express'
+
+	const app = express()
+
+	app.get('/products/:productId', (request, response) => {
+		const product = findProduct(request.params.productId)
+		if (!product) {
+			response.status(404).end()
+			return
+		}
+		response.json(product)
+	})
+	app.listen(3000)
+```
+
+**Example 2 - Bad** (The code treats a month as thirty days, so a subscription that starts on January 31 renews in March and not in February):
+
+```typescript
+	const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
+	const DAYS_PER_MONTH = 30
+	const renewalDate = new Date(startDate.getTime() + DAYS_PER_MONTH * MILLISECONDS_PER_DAY)
+```
+
+**Example 2 - Good** (The `addMonths` function of date-fns handles the different month lengths, so a subscription that starts on January 31 renews at the end of February):
+
+```typescript
+	import { addMonths } from 'date-fns'
+
+	const renewalDate = addMonths(startDate, 1)
+```
+
+### Clause B: Write your own logic only when the library cannot do the job
+
+Write your own logic for a part of the behavior only when the library cannot do that part at all, which means that no option, plugin, or documented extension of the library produces the result you need. An inconvenient interface, a longer setup, an unfamiliar API, or a preference for your own style does not meet this test.
+
+When the test is met, write your own logic for the part the library cannot do, and keep using the library for every part it can. State in a comment why the library cannot do that part. Do not bend the library into doing it, because a workaround the library was not designed for is harder to read and to verify than the logic it replaces.
+
+**Example 1 - Bad** (The code forces `addBusinessDays` to skip a list of closed dates by recounting them over a longer span until the count stops changing, which is harder to follow and to verify than a loop):
+
+```typescript
+	import { addBusinessDays, differenceInCalendarDays, isWeekend } from 'date-fns'
+
+	function addOpenDays(startDate: Date, openDayCount: number, closedDates: Date[]): Date {
+		const closedWeekdays = closedDates.filter(closedDate => !isWeekend(closedDate))
+		let resultDate = addBusinessDays(startDate, openDayCount)
+		let skippedClosedDayCount = 0
+		let closedDayCount = countDatesInRange(closedWeekdays, startDate, resultDate)
+		while (closedDayCount > skippedClosedDayCount) {
+			skippedClosedDayCount = closedDayCount
+			resultDate = addBusinessDays(startDate, openDayCount + skippedClosedDayCount)
+			closedDayCount = countDatesInRange(closedWeekdays, startDate, resultDate)
+		}
+		return resultDate
+	}
+
+	function countDatesInRange(dates: Date[], rangeStart: Date, rangeEnd: Date): number {
+		const datesInRange = dates.filter(date => {
+			const isAfterRangeStart = differenceInCalendarDays(date, rangeStart) > 0
+			const isOnOrBeforeRangeEnd = differenceInCalendarDays(rangeEnd, date) >= 0
+			return isAfterRangeStart && isOnOrBeforeRangeEnd
+		})
+		return datesInRange.length
+	}
+```
+
+**Example 1 - Good** (The loop is the code's own logic for the closed dates, and the comment gives the reason that date-fns cannot do it):
+
+```typescript
+	import { addDays, isSameDay, isWeekend } from 'date-fns'
+
+	// date-fns addBusinessDays skips only Saturdays and Sundays and cannot skip a list of closed dates.
+	function addOpenDays(startDate: Date, openDayCount: number, closedDates: Date[]): Date {
+		let currentDate = startDate
+		let remainingOpenDays = openDayCount
+		while (remainingOpenDays > 0) {
+			const nextDate = addDays(currentDate, 1)
+			const isClosedDate = isWeekend(nextDate) || closedDates.some(closedDate => isSameDay(closedDate, nextDate))
+			if (!isClosedDate) {
+				remainingOpenDays--
+			}
+			currentDate = nextDate
+		}
+		return currentDate
+	}
 ```
