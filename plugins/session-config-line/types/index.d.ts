@@ -1,7 +1,7 @@
 export type ContextReading = {
 	usedTokens: number | null
 	windowTokens: number
-	bufferTokens: number
+	compactTokens: number
 }
 
 export type LimitReading = {

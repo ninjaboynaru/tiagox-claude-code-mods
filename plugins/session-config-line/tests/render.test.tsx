@@ -7,7 +7,7 @@ tier('user')
 
 const BREAKDOWN = {
 	isAutoCompactEnabled: true,
-	categories: [{ name: 'Autocompact buffer', tokens: 33_000, color: 'inactive', isDeferred: false, kind: 'buffer' }],
+	autoCompactThreshold: 167_000,
 } as SessionContextBreakdown
 
 describe('the prompt hint', () => {

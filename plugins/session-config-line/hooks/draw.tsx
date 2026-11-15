@@ -24,7 +24,7 @@ export async function drawWithConfigLines(
 		<Box flexDirection="column">
 			{text !== '' && (
 				<Box marginTop={1}>
-					{context !== undefined && drawBar($, e, context.usedTokens, context.windowTokens, context.bufferTokens)}
+					{context !== undefined && drawBar($, e, context.usedTokens, context.windowTokens, context.compactTokens)}
 					<Text dimColor>{context === undefined ? text : ` ${text}`}</Text>
 				</Box>
 			)}
@@ -38,10 +38,10 @@ function drawBar(
 	e: RenderInputOf<'PromptHint', 'terminal'>,
 	usedTokens: number | null,
 	windowTokens: number,
-	bufferTokens: number,
+	compactTokens: number,
 ): RenderElement {
 	const { Box, Text } = $.ui.resolve(e)
-	const widths = barWidthsOf(usedTokens, windowTokens, bufferTokens)
+	const widths = barWidthsOf(usedTokens, windowTokens, compactTokens)
 
 	return (
 		<Box>

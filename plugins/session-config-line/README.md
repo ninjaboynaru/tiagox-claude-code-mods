@@ -23,7 +23,7 @@ The plugin has no settings and no commands. Once it is installed, it draws one r
 
 ### Context bar
 
-The bar is 20 cells wide. The used part is blue (`#3b6ea5`), the free part is light blue (`#c8d6e5`), and the last part, in dark red (`#8b1a1a`), is the auto-compact buffer. When auto-compact is off, there is no red part.
+The bar is 20 cells wide. The used part is blue (`#3b6ea5`), the free part is light blue (`#c8d6e5`), and the last part, in dark red (`#8b1a1a`), runs from the point where auto-compaction starts to the end of the context window. The free space between the blue and the red is what is left before auto-compaction, and when auto-compact is off there is no red part.
 
 ### Text after the bar
 
