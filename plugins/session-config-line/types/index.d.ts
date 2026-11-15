@@ -9,6 +9,11 @@ export type LimitReading = {
 	percentUsed: number
 }
 
+export type AgentConfig = {
+	model: string
+	effort: string | null
+}
+
 declare module 'claude-code' {
 	interface PluginState {
 		'session-config-line': {
@@ -16,6 +21,7 @@ declare module 'claude-code' {
 			model: string
 			effort: string
 			limits: LimitReading[]
+			agent: StateFamily<AgentConfig>
 		}
 	}
 }

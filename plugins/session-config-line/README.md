@@ -38,6 +38,10 @@ The effort level appears after the first message of a session, because Claude Co
 
 Claude Code does not expose a per-model usage limit, such as the Fable limit, to mods, so the row shows only the weekly limit.
 
+### Subagent row
+
+While you view a subagent's transcript, a second dim row appears above the prompt with that subagent's model and effort level, such as `claude-sonnet-5-5 · high`. It has no bar or percentage, because Claude Code does not expose a subagent's context usage to mods. The row appears once the subagent has made its first request, and it is gone in the main view.
+
 Other surfaces, such as the desktop app, draw nothing.
 
 ## Development

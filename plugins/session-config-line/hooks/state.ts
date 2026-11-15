@@ -1,12 +1,13 @@
 import type { EngineInterface, SessionContextBreakdown, SessionUsage } from 'claude-code'
 
-import type { ContextReading, LimitReading } from '../types/index.js'
+import type { AgentConfig, ContextReading, LimitReading } from '../types/index.js'
 import type { SessionLineParts } from './session-line.js'
 
 const contextRef = { plugin: 'session-config-line', key: 'context' } as const
 const modelRef = { plugin: 'session-config-line', key: 'model' } as const
 const effortRef = { plugin: 'session-config-line', key: 'effort' } as const
 const limitsRef = { plugin: 'session-config-line', key: 'limits' } as const
+const agentRef = { plugin: 'session-config-line', key: 'agent' } as const
 
 function bufferTokensOf(breakdown: SessionContextBreakdown | undefined): number {
 	if (breakdown === undefined || !breakdown.isAutoCompactEnabled) return 0
@@ -48,4 +49,15 @@ export async function recalledConfigLines($: EngineInterface): Promise<{ context
 	const { value: limits = [] } = await $.state.get(limitsRef)
 
 	return { context, model, effort, limits }
+}
+
+export async function rememberAgent($: EngineInterface, agentId: string, config: AgentConfig): Promise<void> {
+	const { value } = await $.state.get({ ...agentRef, id: agentId })
+	if (JSON.stringify(value) !== JSON.stringify(config)) await $.state.set({ ...agentRef, id: agentId }, config)
+}
+
+export async function recalledAgent($: EngineInterface, agentId: string): Promise<AgentConfig | undefined> {
+	const { value } = await $.state.get({ ...agentRef, id: agentId })
+
+	return value
 }

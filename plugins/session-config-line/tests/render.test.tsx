@@ -43,3 +43,34 @@ describe('the prompt hint', () => {
 		expect(texts[3]?.props.dimColor).toBe(true)
 	})
 })
+
+describe('the band above the prompt', () => {
+	test('draws a subagent model and effort only while that subagent is in view', async ($, on) => {
+		on('ui.render', engineRowOf)
+		on('turn.step', async function* () {
+			return { turnId: 't1', index: 0, answer: '', toolUses: [], stopReason: 'end_turn', usage: null }
+		})
+		for await (const _chunk of $.turn.step({
+			turnId: 't1',
+			index: 0,
+			model: 'claude-sonnet-5-5',
+			effort: 'high',
+			messageCount: 1,
+			agentId: 'agent-1',
+		})) {
+			// The stream is read to its end so the mod's hook runs.
+		}
+		const band = {
+			plugin: 'session-config-line',
+			surface: 'terminal',
+			component: 'AbovePrompt',
+		} as const
+		const bandProps = { hasSurvey: false, isCollapsed: false, isWorking: false, maxRows: 10, bodyColumns: 80, scroll: { offset: 0, bodyRows: 9 } }
+
+		const inView = await $.ui.mount({ ...band, props: { ...bandProps, view: { agentId: 'agent-1' } } })
+		const mainView = await $.ui.mount({ ...band, props: { ...bandProps, view: {} } })
+
+		expect((await inView.findAll({ type: 'Text' })).map((text) => text.text)).toEqual(['engine', 'claude-sonnet-5-5 · high'])
+		expect((await mainView.findAll({ type: 'Text' })).map((text) => text.text)).toEqual(['engine'])
+	})
+})

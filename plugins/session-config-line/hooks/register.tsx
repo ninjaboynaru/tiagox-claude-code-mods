@@ -1,7 +1,7 @@
 import type { On } from 'claude-code'
 
-import { drawWithConfigLines } from './draw.js'
-import { rememberEffort, rememberModel, rememberUsage } from './state.js'
+import { drawWithAgentLine, drawWithConfigLines } from './draw.js'
+import { rememberAgent, rememberEffort, rememberModel, rememberUsage } from './state.js'
 
 export function register(on: On): void {
 	on('session.start', async ($, e, next) => {
@@ -33,12 +33,18 @@ export function register(on: On): void {
 	}).catch(($, e, next) => next(e))
 
 	on('turn.step', async function* ($, e, next) {
-		if (e.agentId === undefined && e.effort !== undefined) await rememberEffort($, String(e.effort))
+		const effort = e.effort === undefined ? null : String(e.effort)
+		if (e.agentId !== undefined) await rememberAgent($, e.agentId, { model: e.model, effort })
+		else if (effort !== null) await rememberEffort($, effort)
 
 		return yield* next(e)
 	}).catch(async function* ($, e, next) {
 		return yield* next(e)
 	})
+
+	on('ui.render', { component: 'AbovePrompt', surface: 'terminal' }, async ($, e, next) => {
+		return drawWithAgentLine($, e, await next(e))
+	}).catch(($, e, next) => next(e))
 
 	on('ui.render', { component: 'PromptHint', surface: 'terminal' }, async ($, e, next) => {
 		return drawWithConfigLines($, e, await next(e))
