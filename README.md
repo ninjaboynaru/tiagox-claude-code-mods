@@ -26,7 +26,7 @@ claude plugin install <plugin>@tiagox-claude-code-mods
 | --- | --- |
 | [prompt-timestamp](plugins/prompt-timestamp) | Adds a date line to every prompt, a timestamp beside every terminal message, and a timestamp to every Claude response. |
 | [session-config-line](plugins/session-config-line) | Shows a context usage bar, the model, the effort level, and the usage limits above the prompt hint line. |
-| [tiagox-agent-config](https://github.com/ninjaboynaru/tiagox-agent-config) | A set of high level Claude Code skills to write structured and consistent agent instructions. |
+| [agent-config-skills](plugins/agent-config-skills) | A set of high level Claude Code skills to write structured and consistent agent instructions. |
 
 ## Layout
 

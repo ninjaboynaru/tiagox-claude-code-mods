@@ -16,11 +16,8 @@
 			"description": "Shows a context usage bar, the model, the effort level, and the usage limits above the prompt hint line."
 		},
 		{
-			"name": "tiagox-agent-config",
-			"source": {
-				"source": "github",
-				"repo": "ninjaboynaru/tiagox-agent-config"
-			},
+			"name": "agent-config-skills",
+			"source": "./plugins/agent-config-skills",
 			"description": "A set of high level Claude Code skills to write structured and consistent agent instructions."
 		}
 	]

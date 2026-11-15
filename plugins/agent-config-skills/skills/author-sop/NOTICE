@@ -1,0 +1,6 @@
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+This folder is a modified copy of skills/agent-sop-author from
+https://github.com/strands-agents/agent-sop. The changes add a required
+Ontology section, a rule for grouping constraints by theme, and edits to the
+wording and examples.

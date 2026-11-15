@@ -1,0 +1,9 @@
+{
+	"name": "agent-config-skills",
+	"description": "A set of high level Claude Code skills to write structured and consistent agent instructions.",
+	"author": {
+		"name": "Thiago Pereira"
+	},
+	"license": "MIT",
+	"keywords": ["standards", "sop", "ontology", "code-review", "writing-review", "agent-config"]
+}
