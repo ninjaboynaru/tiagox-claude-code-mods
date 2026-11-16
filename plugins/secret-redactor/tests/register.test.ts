@@ -149,6 +149,53 @@ describe('a JSON pair', () => {
 	})
 })
 
+describe('a key with token in its name', () => {
+	const tokenNames = ['WEARABLE_API_TOKEN', 'GITHUB_TOKEN', 'X_AUTH_TOKEN', 'API_TOKEN', 'api_token', 'apiToken', 'ApiToken', 'github-token', 'TOKEN', 'token']
+
+	test('has its dotenv value replaced, whatever its letter case and naming style', async ($, on) => {
+		await expectShown(
+			$,
+			worldOn(on),
+			envFile,
+			tokenNames.flatMap((name): [string, string][] => [
+				[`${name}=a`, `${name}=${R}`],
+				[`export ${name}="b"`, `export ${name}="${R}"`],
+			]),
+		)
+	})
+
+	test('has its JSON value replaced in the env and headers of an MCP server', async ($, on) => {
+		const configOf = (value: string) => {
+			const pairs = tokenNames.map(name => `"${name}": "${value}"`).join(', ')
+
+			return `{ "mcpServers": { "x": { "env": { ${pairs}, "DEBUG": "verbose" }, "headers": { "X_AUTH_TOKEN": "${value}" } } } }`
+		}
+
+		expect(await shownAfter($, worldOn(on), mcpFile, configOf('a'))).toBe(configOf(R))
+	})
+
+	test('has its value replaced in the args of an MCP server', async ($, on) => {
+		const jsonOf = (list: string[]) => JSON.stringify({ mcpServers: { one: { command: 'npx', args: list } } }, null, 2)
+		const args = ['--api-token', 'a', '--github-token=b', 'WEARABLE_API_TOKEN=c', '--apiToken d', 'X-Auth-Token: e', '--port', '8080']
+		const expected = ['--api-token', R, `--github-token=${R}`, `WEARABLE_API_TOKEN=${R}`, `--apiToken ${R}`, `X-Auth-Token: ${R}`, '--port', '8080']
+
+		expect(await shownAfter($, worldOn(on), mcpFile, jsonOf(args))).toBe(jsonOf(expected))
+	})
+
+	test('has its URL query value replaced', async ($, on) => {
+		await expectShown($, worldOn(on), envFile, [
+			['CALLBACK=https://example.test/cb?api_token=k&region=us-east-1', `CALLBACK=https://example.test/cb?api_token=${R}&region=us-east-1`],
+			['CALLBACK=https://example.test/cb?apiToken=k', `CALLBACK=https://example.test/cb?apiToken=${R}`],
+		])
+	})
+
+	test('keeps its reference when the value is an expansion, and its blank value', async ($, on) => {
+		const unchanged = ['GITHUB_TOKEN=${GITHUB_TOKEN}', 'WEARABLE_API_TOKEN=', '"X_AUTH_TOKEN": ""', '"apiToken": "${API_TOKEN}"']
+
+		await expectShown($, worldOn(on), envFile, unchanged.map((line): [string, string] => [line, line]))
+	})
+})
+
 describe('the args of an MCP server', () => {
 	const args = [
 		'-y',
