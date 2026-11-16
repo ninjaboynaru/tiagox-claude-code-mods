@@ -150,44 +150,157 @@ describe('a JSON pair', () => {
 })
 
 describe('a key with token in its name', () => {
-	const tokenNames = ['WEARABLE_API_TOKEN', 'GITHUB_TOKEN', 'X_AUTH_TOKEN', 'API_TOKEN', 'api_token', 'apiToken', 'ApiToken', 'github-token', 'TOKEN', 'token']
+	// `token` together with a word that qualifies it, before or after it, is hidden. Names are made of letters, digits, `_`, `-`, `.`, and spaces.
+	const compoundNames = [
+		'API_TOKEN',
+		'api_token',
+		'api-token',
+		'WEARABLE_API_TOKEN',
+		'AUTH_TOKEN',
+		'X_AUTH_TOKEN',
+		'TOKEN_API',
+		'TOKEN_AUTH',
+		'GITHUB_TOKEN',
+		'github-token',
+		'apiToken',
+		'ApiToken',
+		'accessToken',
+		'refresh_token',
+		'refreshToken',
+		'REFRESH_TOKEN',
+		'ACCESS_TOKEN',
+		'TOKEN_REFRESH',
+		'X-Auth-Token',
+		'x-auth-token',
+		'bearer_token',
+		'HTTPToken',
+		'getTOKEN',
+		// Any other word that has a letter qualifies.
+		'MY_TOKEN',
+		'SLACK_TOKEN',
+		'TOKEN_VALUE',
+		'SESSION_TOKEN',
+		'X_TOKEN',
+		// A digit sets a word apart, and a letter word beside it still qualifies.
+		'API_TOKEN2',
+		'apiToken2',
+		'auth.token',
+		'AUTH.TOKEN',
+		'auth token',
+		'Auth Token',
+	]
+	// One word that ends in `token` with letters before it, where nothing marks where its first word ends.
+	const concatenatedNames = ['APITOKEN', 'GITHUBTOKEN', 'ACCESSTOKEN', 'authtoken', 'apitoken', 'refreshtoken']
+	// Each is hidden for a key word other than `token`, whatever its `token` is.
+	const hiddenByAnotherKeyWordNames = [
+		'TOKENIZER_API_KEY',
+		'MAX_TOKENS_SECRET',
+		'MAX_TOKEN_PASSWORD',
+		'TOKEN_LIMIT_PASSWD',
+		'max_token_key',
+		'tokensPerMinuteCredential',
+		'maxTokensUsername',
+		'TOKENIZER_AUTHORIZATION',
+		'MAX_TOKENS_PASS',
+	]
+	const hiddenNames = [...compoundNames, ...concatenatedNames, ...hiddenByAnotherKeyWordNames]
 
-	test('has its dotenv value replaced, whatever its letter case and naming style', async ($, on) => {
-		await expectShown(
-			$,
-			worldOn(on),
-			envFile,
-			tokenNames.flatMap((name): [string, string][] => [
-				[`${name}=a`, `${name}=${R}`],
-				[`export ${name}="b"`, `export ${name}="${R}"`],
-			]),
-		)
-	})
+	// `token` with nothing else, or with only digits or separators, is never hidden for being `token`.
+	const aloneNames = ['TOKEN', 'token', 'Token', 'TOKEN2', 'token1', 'TOKEN_1', '_TOKEN', 'TOKEN_']
+	const pluralNames = ['MAX_TOKENS', 'max_tokens', 'maxTokens', 'MAX_OUTPUT_TOKENS', 'tokensPerMinute', 'tokens_per_minute', 'TOKENS', 'tokens', 'MAXTOKENS', 'max.tokens', 'max tokens']
+	const longerWordNames = ['tokenizer', 'TOKENIZER', 'Tokenizer', 'tokenization', 'tokenize', 'TOKENIZE', 'TOKENIZER_PATH', 'tokenizer.path']
+	// One name for each of the quantity words: max, min, limit, count, budget, size, length, num, number, per, and rate.
+	const quantityNames = [
+		'MAX_TOKEN',
+		'maxToken',
+		'max_token_count',
+		'MAX_TOKEN2',
+		'MIN_TOKEN',
+		'TOKEN_LIMIT',
+		'token.limit',
+		'TOKEN_COUNT',
+		'tokenBudget',
+		'TOKEN_SIZE',
+		'TOKEN_LENGTH',
+		'minTokenLength',
+		'NUM_TOKEN',
+		'TOKEN_NUMBER',
+		'TOKEN_PER_MINUTE',
+		'TOKEN_RATE',
+		'max token',
+	]
+	const shownNames = [...pluralNames, ...longerWordNames, ...quantityNames]
 
-	test('has its JSON value replaced in the env and headers of an MCP server', async ($, on) => {
-		const configOf = (value: string) => {
-			const pairs = tokenNames.map(name => `"${name}": "${value}"`).join(', ')
+	type Shape = { description: string; file: ToolCallArgs; accepts: RegExp; textOf: (name: string, value: string) => string }
+	const argsJsonOf = (list: string[]) => JSON.stringify({ mcpServers: { one: { command: 'npx', args: list } } }, null, 2)
+	const shapes: Shape[] = [
+		{ description: 'a dotenv line', file: envFile, accepts: /^[A-Za-z_][\w.-]*$/, textOf: (name, value) => `${name}=${value}` },
+		{ description: 'an exported dotenv line with a quoted value', file: envFile, accepts: /^[A-Za-z_][\w.-]*$/, textOf: (name, value) => `export ${name}="${value}"` },
+		{
+			description: 'the env of an MCP server',
+			file: mcpFile,
+			accepts: /^[^"\\]+$/,
+			textOf: (name, value) => `{ "mcpServers": { "x": { "env": { "${name}": "${value}", "DEBUG": "verbose" } } } }`,
+		},
+		{
+			description: 'the headers of an MCP server',
+			file: mcpFile,
+			accepts: /^[^"\\]+$/,
+			textOf: (name, value) => `{ "mcpServers": { "x": { "headers": { "${name}": "${value}", "Accept": "text/plain" } } } }`,
+		},
+		{ description: 'an args flag and its next element', file: mcpFile, accepts: /^[^\s=:]+$/, textOf: (name, value) => argsJsonOf([`--${name}`, value, '--port', '8080']) },
+		{ description: 'an args flag with its value after an =', file: mcpFile, accepts: /^[^\s=:]+$/, textOf: (name, value) => argsJsonOf([`--${name}=${value}`]) },
+		{ description: 'an args flag with its value after a space', file: mcpFile, accepts: /^[^\s=:]+$/, textOf: (name, value) => argsJsonOf([`--${name} ${value}`]) },
+		{ description: 'an args name=value element', file: mcpFile, accepts: /^[^\s=:]+$/, textOf: (name, value) => argsJsonOf([`${name}=${value}`]) },
+		{ description: 'an args header element', file: mcpFile, accepts: /^[A-Za-z][\w-]*$/, textOf: (name, value) => argsJsonOf([`${name}: ${value}`]) },
+		{
+			description: 'a URL query name in a dotenv line',
+			file: envFile,
+			accepts: /^[^=&#\s]+$/,
+			textOf: (name, value) => `CALLBACK=https://example.test/cb?${name}=${value}&region=us-east-1`,
+		},
+		{
+			description: 'a URL query name in an MCP server url',
+			file: mcpFile,
+			accepts: /^[^=&#\s"\\]+$/,
+			textOf: (name, value) => `  "url": "https://example.test/cb?region=us-east-1&${name}=${value}",`,
+		},
+	]
 
-			return `{ "mcpServers": { "x": { "env": { ${pairs}, "DEBUG": "verbose" }, "headers": { "X_AUTH_TOKEN": "${value}" } } } }`
-		}
+	for (const shape of shapes) {
+		test(`${shape.description} has its value replaced when token has a qualifying word, or the name has another key word`, async ($, on) => {
+			const world = worldOn(on)
+			const names = hiddenNames.filter(name => shape.accepts.test(name))
 
-		expect(await shownAfter($, worldOn(on), mcpFile, configOf('a'))).toBe(configOf(R))
-	})
+			expect(names.length).toBeGreaterThan(hiddenByAnotherKeyWordNames.length)
 
-	test('has its value replaced in the args of an MCP server', async ($, on) => {
-		const jsonOf = (list: string[]) => JSON.stringify({ mcpServers: { one: { command: 'npx', args: list } } }, null, 2)
-		const args = ['--api-token', 'a', '--github-token=b', 'WEARABLE_API_TOKEN=c', '--apiToken d', 'X-Auth-Token: e', '--port', '8080']
-		const expected = ['--api-token', R, `--github-token=${R}`, `WEARABLE_API_TOKEN=${R}`, `--apiToken ${R}`, `X-Auth-Token: ${R}`, '--port', '8080']
+			for (const name of names) {
+				expect(await shownAfter($, world, shape.file, shape.textOf(name, 'a')), name).toBe(shape.textOf(name, R))
+			}
+		})
 
-		expect(await shownAfter($, worldOn(on), mcpFile, jsonOf(args))).toBe(jsonOf(expected))
-	})
+		test(`${shape.description} is left alone when token stands alone`, async ($, on) => {
+			const world = worldOn(on)
+			const names = aloneNames.filter(name => shape.accepts.test(name))
 
-	test('has its URL query value replaced', async ($, on) => {
-		await expectShown($, worldOn(on), envFile, [
-			['CALLBACK=https://example.test/cb?api_token=k&region=us-east-1', `CALLBACK=https://example.test/cb?api_token=${R}&region=us-east-1`],
-			['CALLBACK=https://example.test/cb?apiToken=k', `CALLBACK=https://example.test/cb?apiToken=${R}`],
-		])
-	})
+			expect(names.length).toBeGreaterThan(0)
+
+			for (const name of names) {
+				expect(await shownAfter($, world, shape.file, shape.textOf(name, 'a')), name).toBe(shape.textOf(name, 'a'))
+			}
+		})
+
+		test(`${shape.description} is left alone when token is a plural, starts a longer word, or is a quantity`, async ($, on) => {
+			const world = worldOn(on)
+			const names = shownNames.filter(name => shape.accepts.test(name))
+
+			expect(names.length).toBeGreaterThan(0)
+
+			for (const name of names) {
+				expect(await shownAfter($, world, shape.file, shape.textOf(name, 'a')), name).toBe(shape.textOf(name, 'a'))
+			}
+		})
+	}
 
 	test('keeps its reference when the value is an expansion, and its blank value', async ($, on) => {
 		const unchanged = ['GITHUB_TOKEN=${GITHUB_TOKEN}', 'WEARABLE_API_TOKEN=', '"X_AUTH_TOKEN": ""', '"apiToken": "${API_TOKEN}"']
@@ -257,9 +370,9 @@ describe('the args of an MCP server', () => {
 	})
 
 	test('have a short value after a flag replaced on the next line, and only that line', async ($, on) => {
-		const shown = await shownAfter($, worldOn(on), mcpFile, '"args": [\n  "--token",\n  "a",\n  "b"\n]')
+		const shown = await shownAfter($, worldOn(on), mcpFile, '"args": [\n  "--auth-token",\n  "a",\n  "b"\n]')
 
-		expect(shown).toBe(`"args": [\n  "--token",\n  "${R}",\n  "b"\n]`)
+		expect(shown).toBe(`"args": [\n  "--auth-token",\n  "${R}",\n  "b"\n]`)
 	})
 
 	test('are found in a compact configuration', async ($, on) => {
@@ -272,11 +385,11 @@ describe('the args of an MCP server', () => {
 describe('a .claude.json shown by Read', () => {
 	test('has the secrets of every project and of the top level replaced', async ($, on) => {
 		const config = {
-			mcpServers: { top: { command: 'npx', args: ['--token', 'a'], env: { TOP_KEY: 'b' } } },
+			mcpServers: { top: { command: 'npx', args: ['--api-token', 'a'], env: { TOP_KEY: 'b' } } },
 			projects: { '/work/project': { mcpServers: { local: { url: 'https://u:p@host/v1', args: ['--region', 'eu'], headers: { Authorization: 'Bearer c' } } } } },
 		}
 		const expected = {
-			mcpServers: { top: { command: 'npx', args: ['--token', R], env: { TOP_KEY: R } } },
+			mcpServers: { top: { command: 'npx', args: ['--api-token', R], env: { TOP_KEY: R } } },
 			projects: { '/work/project': { mcpServers: { local: { url: `https://u:${R}@host/v1`, args: ['--region', 'eu'], headers: { Authorization: R } } } } },
 		}
 		const json = (value: unknown) => JSON.stringify(value, null, 2)
@@ -293,9 +406,9 @@ describe('a URL', () => {
 			['DATABASE_URL=postgres://user:pw@host/db', `DATABASE_URL=postgres://user:${R}@host/db`],
 			['DATABASE_URL="postgres://user:p@host/db"', `DATABASE_URL="postgres://user:${R}@host/db"`],
 			['CALLBACK=https://example.test/cb?api_key=k&region=us-east-1', `CALLBACK=https://example.test/cb?api_key=${R}&region=us-east-1`],
-			['CALLBACK=https://example.test/cb?region=us-east-1&token=t#frag', `CALLBACK=https://example.test/cb?region=us-east-1&token=${R}#frag`],
+			['CALLBACK=https://example.test/cb?region=us-east-1&access_token=t#frag', `CALLBACK=https://example.test/cb?region=us-east-1&access_token=${R}#frag`],
 			['DB_PASSWORD=postgres://user:pw@host/db', `DB_PASSWORD=${R}`],
-			['  "url": "https://user:pw@api.example.test/v1?token=t",', `  "url": "https://user:${R}@api.example.test/v1?token=${R}",`],
+			['  "url": "https://user:pw@api.example.test/v1?api_token=t",', `  "url": "https://user:${R}@api.example.test/v1?api_token=${R}",`],
 		])
 	})
 
@@ -305,7 +418,7 @@ describe('a URL', () => {
 			'REMOTE=https://user@host/repo',
 			'PUBLIC_URL=https://example.test?region=us-east-1',
 			'PORT_URL=http://host:8080/path',
-			'  "url": "https://api.example.test/v1?token=${TOKEN}",',
+			'  "url": "https://api.example.test/v1?access_token=${TOKEN}",',
 			'DATABASE_URL=postgres://user:${DB_PASSWORD}@host/db',
 		]
 

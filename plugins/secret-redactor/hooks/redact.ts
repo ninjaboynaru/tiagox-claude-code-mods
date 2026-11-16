@@ -2,8 +2,12 @@ import { isSecretsFileName, namesSecretsFile } from './files.js'
 
 export const REDACTED = '$REDACTED_SECRET_VALUE$'
 
-// `pass` counts only as a whole word, set off by `_` or `-` or the ends of the name, so `BYPASS_CACHE` and `PASSPORT_NUMBER` do not match.
-const SECRET_KEY = /authorization|token|key|username|password|passwd|secret|credential|(?:^|[_-])pass(?:$|[_-])/i
+// A name has a key word when it contains one of these anywhere, in any letter case. `pass` counts only as a whole word, set off by `_` or `-` or the ends of the name, so `BYPASS_CACHE` and `PASSPORT_NUMBER` do not match. `token` is not here: see `isSecretKey`.
+const KEY_WORD = /authorization|key|username|password|passwd|secret|credential|(?:^|[_-])pass(?:$|[_-])/i
+// The words of a name: a run of capitals that does not begin a capitalized word (`API` in `APIToken`), a capitalized or lowercase word, or a run of digits. Any other character, such as `_`, `-`, `.`, or a space, sets words apart.
+const NAME_WORD = /[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+/g
+// A name whose words include one of these has a `token` that is a quantity, as in `MAX_TOKEN` and `tokenBudget`, and is not a secret. This is the only set of words that do not qualify `token`.
+const TOKEN_QUANTITY_WORDS: ReadonlySet<string> = new Set(['max', 'min', 'limit', 'count', 'budget', 'size', 'length', 'num', 'number', 'per', 'rate'])
 const EXPANSION = /\$\{[^}]*\}/
 
 // What a tool puts before a line of a file: the Read tool's `   12→`, `cat -n`'s
@@ -78,6 +82,31 @@ export function redactedSecretsFileLines(text: string): string {
 }
 
 /**
+ * Whether a key name makes its value a secret: it has a key word, or `token`
+ * together with a word that qualifies it, before or after it, as in
+ * `API_TOKEN`, `TOKEN_AUTH`, and `refreshToken`. A qualifying word is any word
+ * other than `token` that has a letter. A word that ends in `token` with
+ * letters before it counts too, as in `APITOKEN` and `authtoken`, since
+ * nothing marks where its first word ends. `token` alone never counts, with or
+ * without digits and separators (`TOKEN`, `TOKEN2`, `_TOKEN`). Neither does the
+ * plural (`MAX_TOKENS`), a word that only starts with it (`tokenizer`), or a
+ * name that has a quantity word, as in `MAX_TOKEN`, unless it has another key
+ * word.
+ */
+function isSecretKey(name: string): boolean {
+	if (KEY_WORD.test(name)) {
+		return true
+	}
+
+	const words = (name.match(NAME_WORD) ?? []).map(word => word.toLowerCase())
+	const hasTokenWord = words.some(word => word.endsWith('token'))
+	const hasQualifyingWord = words.some(word => word !== 'token' && /[a-z]/.test(word))
+	const hasQuantityWord = words.some(word => TOKEN_QUANTITY_WORDS.has(word))
+
+	return hasTokenWord && hasQualifyingWord && !hasQuantityWord
+}
+
+/**
  * The value itself unless it is blank or holds a `${VAR}` expansion, which
  * is a reference and not the secret.
  */
@@ -104,7 +133,7 @@ function redactedLine(line: string): string {
 	const prefix = line.slice(0, line.length - body.length)
 	const withDotenvRedacted = prefix + redactedDotenvLine(body)
 	const withPairsRedacted = withDotenvRedacted.replace(JSON_PAIR, (pair, beforeValue: string, name: string, value: string) =>
-		SECRET_KEY.test(name) ? `${beforeValue}${redactedValue(value)}"` : pair,
+		isSecretKey(name) ? `${beforeValue}${redactedValue(value)}"` : pair,
 	)
 
 	return withPairsRedacted.replace(URL_TEXT, redactedUrl)
@@ -113,7 +142,7 @@ function redactedLine(line: string): string {
 function redactedDotenvLine(line: string): string {
 	const [, beforeValue = '', name = '', rightSide = ''] = DOTENV_LINE.exec(line) ?? []
 
-	if (!SECRET_KEY.test(name)) {
+	if (!isSecretKey(name)) {
 		return line
 	}
 
@@ -153,7 +182,7 @@ function redactedUrl(url: string): string {
 	const withPasswordRedacted = url.replace(URL_PASSWORD, (_, beforePassword: string, password: string) => `${beforePassword}${redactedValue(password)}`)
 
 	return withPasswordRedacted.replace(QUERY_PARAMETER, (parameter, beforeValue: string, name: string, value: string) =>
-		SECRET_KEY.test(name) ? `${beforeValue}${redactedValue(value)}` : parameter,
+		isSecretKey(name) ? `${beforeValue}${redactedValue(value)}` : parameter,
 	)
 }
 
@@ -199,7 +228,7 @@ function redactedArgsOf(args: readonly string[]): string[] {
 function isFlagWithSeparateValue(arg: string): boolean {
 	const hasOwnValue = arg.includes('=') || FLAG_WITH_VALUE.test(arg)
 
-	return arg.startsWith('-') && !hasOwnValue && SECRET_KEY.test(arg)
+	return arg.startsWith('-') && !hasOwnValue && isSecretKey(arg)
 }
 
 /** The secret at the end of one `args` element that holds its own value, if its name matches. */
@@ -207,13 +236,13 @@ function secretValueIn(arg: string): string | undefined {
 	const header = HEADER_ARG.exec(arg)
 
 	if (header) {
-		return SECRET_KEY.test(header[1] ?? '') ? header[2] : undefined
+		return isSecretKey(header[1] ?? '') ? header[2] : undefined
 	}
 
 	const flagWithValue = FLAG_WITH_VALUE.exec(arg)
 
 	if (flagWithValue) {
-		return SECRET_KEY.test(flagWithValue[1] ?? '') ? flagWithValue[2] : undefined
+		return isSecretKey(flagWithValue[1] ?? '') ? flagWithValue[2] : undefined
 	}
 
 	const equals = arg.indexOf('=')
@@ -225,11 +254,11 @@ function secretValueIn(arg: string): string | undefined {
 	const name = arg.slice(0, equals)
 	const value = arg.slice(equals + 1)
 
-	if (SECRET_KEY.test(name)) {
+	if (isSecretKey(name)) {
 		return value
 	}
 
 	const embeddedHeader = name.startsWith('-') ? HEADER_ARG.exec(value) : null
 
-	return embeddedHeader && SECRET_KEY.test(embeddedHeader[1] ?? '') ? embeddedHeader[2] : undefined
+	return embeddedHeader && isSecretKey(embeddedHeader[1] ?? '') ? embeddedHeader[2] : undefined
 }

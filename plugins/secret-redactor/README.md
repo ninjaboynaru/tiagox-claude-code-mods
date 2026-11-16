@@ -39,10 +39,9 @@ Only the value of a secret is replaced. The key, the quotes, the `=`, the flag, 
 - **MCP `args`**: The values in an `args` list, whose elements may sit on separate lines, with line numbers between them. The rules are listed below.
 - **URL**: The value of a query parameter whose name has one of the key words, as in `?api_key=<value>`, and the password part of `scheme://user:password@host`. Both are found on any line.
 
-A name has a key word when it contains any of these words, in any letter case, or has `pass` as a whole word:
+A name has a key word when it contains any of these words, in any letter case, has `pass` as a whole word, or has `token` together with a qualifying word (see below):
 
 - `authorization`
-- `token`
 - `key`
 - `username`
 - `password`
@@ -50,7 +49,17 @@ A name has a key word when it contains any of these words, in any letter case, o
 - `secret`
 - `credential`
 
-These words cover authorization, API key, auth token, token, key, username, password, secret, TOTP secret, and credentials. `pass` counts only as a whole word: the entire name, or set off by `_` or `-` on each side that has more text, as in `PASS`, `DB_PASS`, `db-pass`, and `SMTP_PASS_FILE`. It does not count inside a longer word, so `BYPASS_CACHE`, `PASSPORT_NUMBER`, `COMPASS_HEADING`, and `PASSTHROUGH` stay visible.
+These words cover authorization, API key, auth token, key, username, password, secret, TOTP secret, and credentials. `pass` counts only as a whole word: the entire name, or set off by `_` or `-` on each side that has more text, as in `PASS`, `DB_PASS`, `db-pass`, and `SMTP_PASS_FILE`. It does not count inside a longer word, so `BYPASS_CACHE`, `PASSPORT_NUMBER`, `COMPASS_HEADING`, and `PASSTHROUGH` stay visible.
+
+`token` is hidden only when a qualifying word comes with it, and never when it stands alone. A word is a part of the name set off by `_`, `-`, `.`, a space, a camelCase or PascalCase boundary, a digit, or the start or end of the name. A qualifying word is any other word of the name that has at least one letter and is not one of the quantity words below, so there is no fixed list of them: `api`, `auth`, `refresh`, `access`, `github`, `bearer`, `slack`, `my`, and `value` all qualify, and so does any other.
+
+- **Hidden**, because `token` has a qualifying word before or after it: `API_TOKEN`, `WEARABLE_API_TOKEN`, `AUTH_TOKEN`, `TOKEN_API`, `TOKEN_AUTH`, `GITHUB_TOKEN`, `MY_TOKEN`, `SESSION_TOKEN`, `TOKEN_VALUE`, `github-token`, `apiToken`, `accessToken`, `refresh_token`, `X-Auth-Token`, `--api-token`, `auth.token`, and `API_TOKEN2`. A single word that ends in `token` with letters before it, such as `APITOKEN` and `authtoken`, is hidden too, since nothing marks where its first word ends.
+- **Visible**, because `token` stands alone: `TOKEN`, `token`, `Token`, `--token`, and a URL query name `token`. Digits and separators do not qualify it, so `TOKEN2`, `token1`, `TOKEN_1`, `_TOKEN`, and `TOKEN_` are visible too.
+- **Visible**, because `token` is a plural: `MAX_TOKENS`, `max_tokens`, `maxTokens`, `MAX_OUTPUT_TOKENS`, and `tokensPerMinute`.
+- **Visible**, because `token` only starts a longer word: `tokenizer`, `TOKENIZER`, `tokenization`, and `tokenize`.
+- **Visible**, because `token` is a quantity: a name that also has one of the words in `TOKEN_QUANTITY_WORDS` (in `hooks/redact.ts`), which are `max`, `min`, `limit`, `count`, `budget`, `size`, `length`, `num`, `number`, `per`, and `rate`. Examples are `MAX_TOKEN`, `max_token_count`, `TOKEN_LIMIT`, and `tokenBudget`.
+
+A name with another key word is hidden for that word whatever its `token` is, as in `TOKENIZER_API_KEY`, `MAX_TOKENS_SECRET`, and `MAX_TOKEN_PASSWORD`.
 
 The `args` list has no keys, so it follows four rules for each element:
 
@@ -63,7 +72,7 @@ The `args` list has no keys, so it follows four rules for each element:
 
 - Blank values.
 - Values that contain a `${VAR}` or `${VAR:-default}` expansion, such as `Bearer ${MY_TOKEN}`, since the text in the file is a reference and not the secret.
-- Entries whose key has none of the key words, such as `DB_PORT=5432`, `LOG_LEVEL=debug`, the value after `--port` or `--region`, and `region=us-east-1`.
+- Entries whose key has none of the key words, such as `DB_PORT=5432`, `LOG_LEVEL=debug`, `TOKEN=abc`, `MAX_TOKENS=4096`, `TOKENIZER=cl100k`, the value after `--port` or `--region`, and `region=us-east-1`.
 - A URL with no password.
 - Comment lines in a dotenv file.
 - Every tool result that does not show a secrets file, including a `NAME=value` line in `notes.txt` and code such as `getValue(process.env.DB_USERNAME)`.
