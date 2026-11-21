@@ -36,7 +36,7 @@ describe('the prompt hint', () => {
 			'▬'.repeat(10),
 			'▬'.repeat(7),
 			'▬'.repeat(3),
-			' 50% · claude-fable-5-2 · Weekly Usage: 52%',
+			' 50% [200k] · claude-fable-5-2 · Weekly Usage: 52%',
 			'engine',
 		])
 		expect(texts.slice(0, 3).map((text) => text.props.color)).toEqual(['#3b6ea5', '#c8d6e5', '#8b1a1a'])
@@ -66,7 +66,7 @@ describe('the usage limits', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts[3]?.text).toBe(' 50% · moonshotai/Kimi-K3.1-Pro')
+		expect(texts[3]?.text).toBe(' 50% [200k] · moonshotai/Kimi-K3.1-Pro')
 	})
 })
 
@@ -93,7 +93,7 @@ describe('the context window', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '▬'.repeat(13), ' 20% · z-ai/glm-5.3', 'engine'])
+		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '▬'.repeat(13), ' 20% [500k] · z-ai/glm-5.3', 'engine'])
 	})
 })
 

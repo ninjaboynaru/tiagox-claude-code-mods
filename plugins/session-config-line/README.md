@@ -18,7 +18,7 @@ claude plugin install session-config-line@tiagox-claude-code-mods
 The plugin has no settings and no commands. Once it is installed, it draws one row in the terminal, above the hint line under the prompt box, with one blank row above it:
 
 ```text
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ 15% · claude-sonnet-5-5 · medium · Weekly Usage: 52%
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ 15% [1m] · claude-sonnet-5-5 · medium · Weekly Usage: 52%
 ```
 
 ### Context bar
@@ -45,7 +45,7 @@ The suffix changes only what this plugin draws. Claude Code still compacts the c
 
 After the bar come four values, separated by dots:
 
-- The percentage of the context window in use.
+- The percentage of the context window in use, followed by the size of the window in square brackets, in thousands (`k`) or millions (`m`) of tokens, such as `36% [1m]`.
 - The model ID.
 - The effort level.
 - The weekly usage limit.

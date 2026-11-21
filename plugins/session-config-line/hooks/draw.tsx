@@ -1,6 +1,6 @@
 import type { EngineInterface, RenderElement, RenderInputOf } from 'claude-code'
 
-import { barWidthsOf, percentUsedOf } from './bar-widths.js'
+import { barWidthsOf, percentUsedOf, windowLabelOf } from './bar-widths.js'
 import { sessionLineOf } from './session-line.js'
 import { recalledAgent, recalledConfigLines } from './state.js'
 
@@ -17,7 +17,8 @@ export async function drawWithConfigLines(
 	const { Box, Text } = $.ui.resolve(e)
 	const { context, ...sessionParts } = await recalledConfigLines($)
 	const sessionLine = sessionLineOf(sessionParts)
-	const percentText = context === undefined ? '' : `${percentUsedOf(context.usedTokens, context.windowTokens)}%`
+	const percentText =
+		context === undefined ? '' : `${percentUsedOf(context.usedTokens, context.windowTokens)}% ${windowLabelOf(context.windowTokens)}`.trim()
 	const text = [percentText, sessionLine].filter(part => part !== '').join(' · ')
 
 	return (
