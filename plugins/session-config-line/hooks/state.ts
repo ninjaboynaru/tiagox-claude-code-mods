@@ -1,12 +1,14 @@
 import type { EngineInterface, SessionContextBreakdown, SessionUsage } from 'claude-code'
 
-import type { AgentConfig, ContextReading, LimitReading } from '../types/index.js'
+import type { AgentConfig, ContextReading, LabeledWindowReading, LimitReading } from '../types/index.js'
+import { contextWithLabeledWindowOf, labeledWindowTokensOf } from './model-window.js'
 import type { SessionLineParts } from './session-line.js'
 
 const contextRef = { plugin: 'session-config-line', key: 'context' } as const
 const modelRef = { plugin: 'session-config-line', key: 'model' } as const
 const effortRef = { plugin: 'session-config-line', key: 'effort' } as const
 const limitsRef = { plugin: 'session-config-line', key: 'limits' } as const
+const labeledWindowRef = { plugin: 'session-config-line', key: 'labeledWindow' } as const
 const agentRef = { plugin: 'session-config-line', key: 'agent' } as const
 
 function compactTokensOf(windowTokens: number, breakdown: SessionContextBreakdown | undefined): number {
@@ -36,6 +38,11 @@ export async function rememberModel($: EngineInterface): Promise<void> {
 	const model = await $.session.model()
 	const { value } = await $.state.get(modelRef)
 	if (value !== model) await $.state.set(modelRef, model)
+
+	const modelPicker: unknown = await $.settings.read({ key: 'modelPicker' })
+	const labeledWindow: LabeledWindowReading = { tokens: labeledWindowTokensOf(modelPicker, model) }
+	const { value: heldLabeledWindow } = await $.state.get(labeledWindowRef)
+	if (heldLabeledWindow?.tokens !== labeledWindow.tokens) await $.state.set(labeledWindowRef, labeledWindow)
 }
 
 export async function rememberEffort($: EngineInterface, effort: string): Promise<void> {
@@ -44,7 +51,9 @@ export async function rememberEffort($: EngineInterface, effort: string): Promis
 }
 
 export async function recalledConfigLines($: EngineInterface): Promise<{ context: ContextReading | undefined } & SessionLineParts> {
-	const { value: context } = await $.state.get(contextRef)
+	const { value: heldContext } = await $.state.get(contextRef)
+	const { value: labeledWindow } = await $.state.get(labeledWindowRef)
+	const context = heldContext === undefined ? undefined : contextWithLabeledWindowOf(heldContext, labeledWindow?.tokens ?? null)
 	const { value: model } = await $.state.get(modelRef)
 	const { value: effort } = await $.state.get(effortRef)
 	const { value: limits = [] } = await $.state.get(limitsRef)

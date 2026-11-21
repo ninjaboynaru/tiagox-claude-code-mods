@@ -70,6 +70,33 @@ describe('the usage limits', () => {
 	})
 })
 
+describe('the context window', () => {
+	test('comes from the model picker label of the session model when the label ends with one', async ($, on) => {
+		on('ui.render', engineRowOf)
+		on('session.start', () => ({ cwd: '/' }))
+		on('session.model', () => ({ value: 'z-ai/glm-5.3' }))
+		on('settings.read', () => ({ value: { modelPicker: { options: [{ model: 'z-ai/glm-5.3', label: 'GLM 5.3 [500k]' }] } } }))
+		on('session.usage', () => ({
+			value: {
+				startedAt: 0,
+				context: { tokens: 100_000, window: 1_000_000, percent: 10, breakdown: BREAKDOWN },
+				rateLimits: [],
+			},
+		}))
+		await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+		const ui = await $.ui.mount({
+			plugin: 'session-config-line',
+			surface: 'terminal',
+			component: 'PromptHint',
+			props: { isDraft: false, isWorking: false, hint: '? for shortcuts' },
+		})
+		const texts = await ui.findAll({ type: 'Text' })
+
+		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '▬'.repeat(13), ' 20% · z-ai/glm-5.3', 'engine'])
+	})
+})
+
 describe('the band above the prompt', () => {
 	test('draws a subagent model and effort only while that subagent is in view', async ($, on) => {
 		on('ui.render', engineRowOf)

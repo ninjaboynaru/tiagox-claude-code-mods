@@ -14,6 +14,10 @@ export type AgentConfig = {
 	effort: string | null
 }
 
+export type LabeledWindowReading = {
+	tokens: number | null
+}
+
 declare module 'claude-code' {
 	interface PluginState {
 		'session-config-line': {
@@ -21,6 +25,7 @@ declare module 'claude-code' {
 			model: string
 			effort: string
 			limits: LimitReading[]
+			labeledWindow: LabeledWindowReading
 			agent: StateFamily<AgentConfig>
 		}
 	}
