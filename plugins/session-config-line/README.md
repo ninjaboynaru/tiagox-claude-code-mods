@@ -36,6 +36,8 @@ After the bar come four values, separated by dots:
 
 The effort level appears after the first message of a session, because Claude Code only reports it with each request.
 
+The usage limits belong to the Claude plan, so the row leaves them out while the session model's ID does not start with `claude-`, such as a model served through an LLM gateway.
+
 Claude Code does not expose a per-model usage limit, such as the Fable limit, to mods, so the row shows only the weekly limit.
 
 ### Subagent row

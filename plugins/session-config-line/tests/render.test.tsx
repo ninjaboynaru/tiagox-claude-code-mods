@@ -44,6 +44,32 @@ describe('the prompt hint', () => {
 	})
 })
 
+describe('the usage limits', () => {
+	test('are left out while the session model is not a Claude model', async ($, on) => {
+		on('ui.render', engineRowOf)
+		on('session.start', () => ({ cwd: '/' }))
+		on('session.model', () => ({ value: 'moonshotai/Kimi-K3.1-Pro' }))
+		on('session.usage', () => ({
+			value: {
+				startedAt: 0,
+				context: { tokens: 100_000, window: 200_000, percent: 50, breakdown: BREAKDOWN },
+				rateLimits: [{ kind: 'seven_day', percentUsed: 52 }],
+			},
+		}))
+		await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+		const ui = await $.ui.mount({
+			plugin: 'session-config-line',
+			surface: 'terminal',
+			component: 'PromptHint',
+			props: { isDraft: false, isWorking: false, hint: '? for shortcuts' },
+		})
+		const texts = await ui.findAll({ type: 'Text' })
+
+		expect(texts[3]?.text).toBe(' 50% · moonshotai/Kimi-K3.1-Pro')
+	})
+})
+
 describe('the band above the prompt', () => {
 	test('draws a subagent model and effort only while that subagent is in view', async ($, on) => {
 		on('ui.render', engineRowOf)

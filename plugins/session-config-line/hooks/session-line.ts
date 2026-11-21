@@ -13,8 +13,12 @@ function limitLabelOf(kind: string): string | null {
 	return null
 }
 
+const CLAUDE_MODEL_ID_PREFIX = 'claude-'
+
 export function sessionLineOf({ model, effort, limits }: SessionLineParts): string {
-	const limitParts = limits.flatMap(({ kind, percentUsed }) => {
+	const isNonClaudeModel = model !== undefined && !model.startsWith(CLAUDE_MODEL_ID_PREFIX)
+	const shownLimits = isNonClaudeModel ? [] : limits
+	const limitParts = shownLimits.flatMap(({ kind, percentUsed }) => {
 		const label = limitLabelOf(kind)
 
 		return label === null ? [] : [{ kind, text: `${label} ${Math.round(percentUsed)}%` }]
