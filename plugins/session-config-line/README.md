@@ -37,7 +37,7 @@ Claude Code assumes a context window for a model ID it does not recognize, such 
 }
 ```
 
-The plugin reads the label of the row whose `model` is the session's model ID. `[500k]`, `[1m]`, and `[1.5m]` are valid, in either letter case. When the model has no row, the label has no suffix, or the suffix is malformed, such as `[500]` or `[big]`, the plugin uses the window Claude Code reports.
+The plugin reads the label of the row whose `model` is the session's model ID. `[500k]`, `[1m]`, and `[1.5m]` are valid, in either letter case. When the model has no row, the label has no suffix, or the suffix is malformed, such as `[500]` or `[big]`, the plugin uses the window Claude Code reports. When Claude Code reports no window either, the plugin assumes 1 million tokens.
 
 The suffix changes only what this plugin draws. Claude Code still compacts the conversation at its own window, so the red part of the bar starts at the same token count as before.
 

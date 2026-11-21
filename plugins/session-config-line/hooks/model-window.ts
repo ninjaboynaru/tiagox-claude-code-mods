@@ -2,6 +2,7 @@ import type { ContextReading } from '../types/index.js'
 
 const WINDOW_SUFFIX_PATTERN = /\[(\d+(?:\.\d+)?)([km])\]$/i
 const TOKENS_PER_UNIT = { k: 1_000, m: 1_000_000 } as const
+const ASSUMED_WINDOW_TOKENS = 1_000_000
 
 type LabeledModelPickerRow = {
 	model: string
@@ -37,11 +38,13 @@ export function labeledWindowTokensOf(modelPicker: unknown, model: string): numb
 }
 
 export function contextWithLabeledWindowOf(context: ContextReading, labeledWindowTokens: number | null): ContextReading {
-	if (labeledWindowTokens === null) return context
+	const isReportedWindowKnown = context.windowTokens > 0
+	if (labeledWindowTokens === null && isReportedWindowKnown) return context
 
+	const windowTokens = labeledWindowTokens ?? ASSUMED_WINDOW_TOKENS
 	const hasCompactPart = context.compactTokens > 0
 	const compactStartTokens = context.windowTokens - context.compactTokens
-	const compactTokens = hasCompactPart ? Math.max(0, labeledWindowTokens - compactStartTokens) : 0
+	const compactTokens = hasCompactPart ? Math.max(0, windowTokens - compactStartTokens) : 0
 
-	return { usedTokens: context.usedTokens, windowTokens: labeledWindowTokens, compactTokens }
+	return { usedTokens: context.usedTokens, windowTokens, compactTokens }
 }

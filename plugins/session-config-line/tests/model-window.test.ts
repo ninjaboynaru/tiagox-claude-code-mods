@@ -44,6 +44,13 @@ describe('contextWithLabeledWindowOf', () => {
 		expect(contextWithLabeledWindowOf(context, null)).toEqual(context)
 	})
 
+	test('assumes a window of one million tokens when neither the label nor Claude Code gives one', async () => {
+		const unknownWindowContext = { usedTokens: 100_000, windowTokens: 0, compactTokens: 0 }
+
+		expect(contextWithLabeledWindowOf(unknownWindowContext, null)).toEqual({ usedTokens: 100_000, windowTokens: 1_000_000, compactTokens: 0 })
+		expect(contextWithLabeledWindowOf(unknownWindowContext, 500_000)).toEqual({ usedTokens: 100_000, windowTokens: 500_000, compactTokens: 0 })
+	})
+
 	test('uses the labeled window and keeps the auto-compact point where it was', async () => {
 		expect(contextWithLabeledWindowOf(context, 500_000)).toEqual({ usedTokens: 100_000, windowTokens: 500_000, compactTokens: 0 })
 		expect(contextWithLabeledWindowOf(context, 980_000)).toEqual({ usedTokens: 100_000, windowTokens: 980_000, compactTokens: 13_000 })
