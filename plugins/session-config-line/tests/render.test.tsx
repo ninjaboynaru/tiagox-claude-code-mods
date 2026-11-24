@@ -1,4 +1,4 @@
-import type { SessionContextBreakdown } from 'claude-code'
+import type { ContextCategory, SessionContextBreakdown } from 'claude-code'
 import { describe, expect, test, tier } from 'claude-code/testing'
 
 import { engineRowOf } from './engine-row.js'
@@ -8,6 +8,7 @@ tier('user')
 const BREAKDOWN = {
 	isAutoCompactEnabled: true,
 	autoCompactThreshold: 167_000,
+	categories: [] as ContextCategory[],
 } as SessionContextBreakdown
 
 describe('the prompt hint', () => {
@@ -35,12 +36,54 @@ describe('the prompt hint', () => {
 		expect(texts.map((text) => text.text)).toEqual([
 			'▬'.repeat(10),
 			'▬'.repeat(7),
+			'',
 			'▬'.repeat(3),
 			' 50%/84% [200k] · claude-fable-5-2 · Weekly Usage: 52%',
 			'engine',
 		])
-		expect(texts.slice(0, 3).map((text) => text.props.color)).toEqual(['#3b6ea5', '#c8d6e5', '#8b1a1a'])
-		expect(texts[3]?.props.dimColor).toBe(true)
+		expect(texts.slice(0, 4).map((text) => text.props.color)).toEqual(['#3b6ea5', '#c8d6e5', '#4a4a4a', '#8b1a1a'])
+		expect(texts[4]?.props.dimColor).toBe(true)
+	})
+
+	test('draws the auto-compact buffer in gray from the threshold to the auto-compact window', async ($, on) => {
+		on('ui.render', engineRowOf)
+		on('session.start', () => ({ cwd: '/' }))
+		on('session.model', () => ({ value: 'claude-fable-5-2' }))
+		on('session.usage', () => ({
+			value: {
+				startedAt: 0,
+				context: {
+					tokens: 100_000,
+					window: 1_000_000,
+					percent: 10,
+					breakdown: {
+						...BREAKDOWN,
+						autoCompactThreshold: 567_000,
+						categories: [{ name: 'Autocompact buffer', tokens: 33_000, color: 'inactive', isDeferred: false, kind: 'buffer' }],
+					},
+				},
+				rateLimits: [],
+			},
+		}))
+		await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+		const ui = await $.ui.mount({
+			plugin: 'session-config-line',
+			surface: 'terminal',
+			component: 'PromptHint',
+			props: { isDraft: false, isWorking: false, hint: '? for shortcuts' },
+		})
+		const texts = await ui.findAll({ type: 'Text' })
+
+		expect(texts.map((text) => text.text)).toEqual([
+			'▬'.repeat(2),
+			'▬'.repeat(9),
+			'▬'.repeat(1),
+			'▬'.repeat(8),
+			' 10%/57% [1m] · claude-fable-5-2',
+			'engine',
+		])
+		expect(texts[2]?.props.color).toBe('#4a4a4a')
 	})
 })
 
@@ -66,7 +109,7 @@ describe('the percentage', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(10), '▬'.repeat(10), '', ' 50% [200k] · claude-fable-5-2', 'engine'])
+		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(10), '▬'.repeat(10), '', '', ' 50% [200k] · claude-fable-5-2', 'engine'])
 	})
 })
 
@@ -92,7 +135,7 @@ describe('the usage limits', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts[3]?.text).toBe(' 50%/84% [200k] · moonshotai/Kimi-K3.1-Pro')
+		expect(texts[4]?.text).toBe(' 50%/84% [200k] · moonshotai/Kimi-K3.1-Pro')
 	})
 })
 
@@ -119,7 +162,7 @@ describe('the context window', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '▬'.repeat(13), ' 20%/33% [500k] · z-ai/glm-5.3', 'engine'])
+		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '', '▬'.repeat(13), ' 20%/33% [500k] · z-ai/glm-5.3', 'engine'])
 	})
 })
 

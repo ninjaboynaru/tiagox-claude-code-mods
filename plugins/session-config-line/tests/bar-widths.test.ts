@@ -6,17 +6,33 @@ tier('user')
 
 describe('barWidthsOf', () => {
 	test('splits the bar into used, free, and auto-compact cells that add up to 20', async () => {
-		expect(barWidthsOf(100_000, 200_000, 33_000)).toEqual({ used: 10, free: 7, compact: 3 })
-		expect(barWidthsOf(100_000, 200_000, 1_000)).toEqual({ used: 10, free: 9, compact: 1 })
-		expect(barWidthsOf(100_000, 200_000, 0)).toEqual({ used: 10, free: 10, compact: 0 })
+		expect(barWidthsOf(100_000, 200_000, 33_000, 0)).toEqual({ used: 10, free: 7, buffer: 0, compact: 3 })
+		expect(barWidthsOf(100_000, 200_000, 1_000, 0)).toEqual({ used: 10, free: 9, buffer: 0, compact: 1 })
 	})
 
-	test('a used part reaching into the auto-compact part covers it and leaves the rest red', async () => {
-		expect(barWidthsOf(170_000, 200_000, 40_000)).toEqual({ used: 17, free: 0, compact: 3 })
+	test('draws the auto-compact buffer as its own part between the free part and the red part', async () => {
+		expect(barWidthsOf(100_000, 1_000_000, 433_000, 33_000)).toEqual({ used: 2, free: 9, buffer: 1, compact: 8 })
+		expect(barWidthsOf(100_000, 1_000_000, 500_000, 100_000)).toEqual({ used: 2, free: 8, buffer: 2, compact: 8 })
+	})
+
+	test('gives the buffer and the red part at least one cell each while there is room', async () => {
+		expect(barWidthsOf(100_000, 1_000_000, 401_000, 1_000)).toEqual({ used: 2, free: 9, buffer: 1, compact: 8 })
+		expect(barWidthsOf(100_000, 1_000_000, 34_000, 33_000)).toEqual({ used: 2, free: 16, buffer: 1, compact: 1 })
+		expect(barWidthsOf(100_000, 1_000_000, 33_000, 33_000)).toEqual({ used: 2, free: 17, buffer: 1, compact: 0 })
+	})
+
+	test('a used part reaching into the auto-compact part covers the buffer before the red part', async () => {
+		expect(barWidthsOf(170_000, 200_000, 40_000, 0)).toEqual({ used: 17, free: 0, buffer: 0, compact: 3 })
+		expect(barWidthsOf(950_000, 1_000_000, 433_000, 33_000)).toEqual({ used: 19, free: 0, buffer: 0, compact: 1 })
+		expect(barWidthsOf(1_000_000, 1_000_000, 433_000, 33_000)).toEqual({ used: 20, free: 0, buffer: 0, compact: 0 })
+	})
+
+	test('draws neither the buffer nor the red part while auto-compact is off', async () => {
+		expect(barWidthsOf(100_000, 200_000, 0, 0)).toEqual({ used: 10, free: 10, buffer: 0, compact: 0 })
 	})
 
 	test('no token count yet draws no used part and shows 0%', async () => {
-		expect(barWidthsOf(null, 200_000, 33_000)).toEqual({ used: 0, free: 17, compact: 3 })
+		expect(barWidthsOf(null, 200_000, 33_000, 0)).toEqual({ used: 0, free: 17, buffer: 0, compact: 3 })
 		expect(percentUsedOf(null, 200_000)).toBe(0)
 	})
 })

@@ -1,5 +1,6 @@
 import type { EngineInterface, RenderElement, RenderInputOf } from 'claude-code'
 
+import type { ContextReading } from '../types/index.js'
 import { barWidthsOf, percentTextOf } from './bar-widths.js'
 import { sessionLineOf } from './session-line.js'
 import { recalledAgent, recalledConfigLines } from './state.js'
@@ -7,6 +8,7 @@ import { recalledAgent, recalledConfigLines } from './state.js'
 const BAR_GLYPH = '▬'
 const USED_COLOR = '#3b6ea5'
 const FREE_COLOR = '#c8d6e5'
+const BUFFER_COLOR = '#4a4a4a'
 const COMPACT_COLOR = '#8b1a1a'
 
 export async function drawWithConfigLines(
@@ -24,7 +26,7 @@ export async function drawWithConfigLines(
 		<Box flexDirection="column">
 			{text !== '' && (
 				<Box marginTop={1}>
-					{context !== undefined && drawBar($, e, context.usedTokens, context.windowTokens, context.compactTokens)}
+					{context !== undefined && drawBar($, e, context)}
 					<Text dimColor>{context === undefined ? text : ` ${text}`}</Text>
 				</Box>
 			)}
@@ -36,17 +38,16 @@ export async function drawWithConfigLines(
 function drawBar(
 	$: EngineInterface,
 	e: RenderInputOf<'PromptHint', 'terminal'>,
-	usedTokens: number | null,
-	windowTokens: number,
-	compactTokens: number,
+	context: ContextReading,
 ): RenderElement {
 	const { Box, Text } = $.ui.resolve(e)
-	const widths = barWidthsOf(usedTokens, windowTokens, compactTokens)
+	const widths = barWidthsOf(context.usedTokens, context.windowTokens, context.compactTokens, context.bufferTokens)
 
 	return (
 		<Box>
 			<Text color={USED_COLOR}>{BAR_GLYPH.repeat(widths.used)}</Text>
 			<Text color={FREE_COLOR}>{BAR_GLYPH.repeat(widths.free)}</Text>
+			<Text color={BUFFER_COLOR}>{BAR_GLYPH.repeat(widths.buffer)}</Text>
 			<Text color={COMPACT_COLOR}>{BAR_GLYPH.repeat(widths.compact)}</Text>
 		</Box>
 	)

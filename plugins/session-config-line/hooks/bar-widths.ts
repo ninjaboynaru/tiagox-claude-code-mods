@@ -3,18 +3,20 @@ export const BAR_CELLS = 20
 export type BarWidths = {
 	used: number
 	free: number
+	buffer: number
 	compact: number
 }
 
-export function barWidthsOf(usedTokens: number | null, windowTokens: number, compactTokens: number): BarWidths {
-	if (windowTokens <= 0) return { used: 0, free: BAR_CELLS, compact: 0 }
+export function barWidthsOf(usedTokens: number | null, windowTokens: number, compactTokens: number, bufferTokens: number): BarWidths {
+	if (windowTokens <= 0) return { used: 0, free: BAR_CELLS, buffer: 0, compact: 0 }
 
 	const cellsOf = (tokens: number) => Math.min(BAR_CELLS, Math.max(0, Math.round((tokens / windowTokens) * BAR_CELLS)))
+	const atLeastOneCellOf = (tokens: number) => (tokens > 0 ? Math.max(1, cellsOf(tokens)) : 0)
 	const used = cellsOf(usedTokens ?? 0)
-	const compactWanted = compactTokens > 0 ? Math.max(1, cellsOf(compactTokens)) : 0
-	const compact = Math.min(compactWanted, BAR_CELLS - used)
+	const compact = Math.min(atLeastOneCellOf(compactTokens - bufferTokens), BAR_CELLS - used)
+	const buffer = Math.min(atLeastOneCellOf(bufferTokens), BAR_CELLS - used - compact)
 
-	return { used, free: BAR_CELLS - used - compact, compact }
+	return { used, free: BAR_CELLS - used - buffer - compact, buffer, compact }
 }
 
 const TOKENS_PER_THOUSAND = 1_000

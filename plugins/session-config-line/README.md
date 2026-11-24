@@ -23,7 +23,9 @@ The plugin has no settings and no commands. Once it is installed, it draws one r
 
 ### Context bar
 
-The bar is 20 cells wide. The used part is blue (`#3b6ea5`), the free part is light blue (`#c8d6e5`), and the last part, in dark red (`#8b1a1a`), runs from the point where auto-compaction starts to the end of the context window. The free space between the blue and the red is what is left before auto-compaction, and when auto-compact is off there is no red part.
+The bar is 20 cells wide. The used part is blue (`#3b6ea5`) and the free part is light blue (`#c8d6e5`). The free part ends where auto-compaction starts, so it is what is left before auto-compaction. Next comes a gray part (`#4a4a4a`) for the auto-compact buffer, the reserve that `/context` lists as "Autocompact buffer", which runs from that point to the auto-compact window. The last part, in dark red (`#8b1a1a`), runs from the auto-compact window to the end of the context window. With a 1 million token window and an `autoCompactWindow` of 600,000 tokens, auto-compaction starts at about 567,000 tokens, the gray part covers 567,000 to 600,000, and the red part covers 600,000 to 1 million.
+
+The gray part and the red part each take at least one cell whenever they are larger than zero and the used part leaves room for them. When auto-compact is off, the bar has neither.
 
 The text after the bar gives the same two points as percentages of the context window. In `12%/60% [1m]`, 12% of the window is in use and auto-compaction starts at 60%. When auto-compact is off, only the used percentage appears, such as `12% [1m]`.
 
@@ -41,7 +43,7 @@ Claude Code assumes a context window for a model ID it does not recognize, such 
 
 The plugin reads the label of the row whose `model` is the session's model ID. `[500k]`, `[1m]`, and `[1.5m]` are valid, in either letter case. When the model has no row, the label has no suffix, or the suffix is malformed, such as `[500]` or `[big]`, the plugin uses the window Claude Code reports. When Claude Code reports no window either, the plugin assumes 1 million tokens.
 
-The suffix changes only what this plugin draws. Claude Code still compacts the conversation at its own window, so the red part of the bar starts at the same token count as before.
+The suffix changes only what this plugin draws. Claude Code still compacts the conversation at its own window, so the gray part of the bar starts at the same token count as before.
 
 ### Text after the bar
 

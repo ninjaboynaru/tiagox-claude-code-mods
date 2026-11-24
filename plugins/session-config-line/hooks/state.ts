@@ -18,12 +18,22 @@ function compactTokensOf(windowTokens: number, breakdown: SessionContextBreakdow
 	return Math.max(0, windowTokens - threshold)
 }
 
+function bufferTokensOf(compactTokens: number, breakdown: SessionContextBreakdown | undefined): number {
+	if (compactTokens <= 0) return 0
+
+	const bufferRow = breakdown?.categories.find(category => category.kind === 'buffer')
+
+	return Math.min(compactTokens, bufferRow?.tokens ?? 0)
+}
+
 export async function rememberUsage($: EngineInterface, now: Pick<SessionUsage, 'context' | 'rateLimits'>): Promise<void> {
 	const { context: withBreakdown } = await $.session.usage({ breakdown: 'summary' })
+	const compactTokens = compactTokensOf(now.context.window, withBreakdown.breakdown)
 	const context: ContextReading = {
 		usedTokens: now.context.tokens ?? null,
 		windowTokens: now.context.window,
-		compactTokens: compactTokensOf(now.context.window, withBreakdown.breakdown),
+		compactTokens,
+		bufferTokens: bufferTokensOf(compactTokens, withBreakdown.breakdown),
 	}
 	const limits: LimitReading[] = now.rateLimits.map(({ kind, percentUsed }) => ({ kind, percentUsed }))
 
@@ -53,7 +63,9 @@ export async function rememberEffort($: EngineInterface, effort: string): Promis
 export async function recalledConfigLines($: EngineInterface): Promise<{ context: ContextReading | undefined } & SessionLineParts> {
 	const { value: heldContext } = await $.state.get(contextRef)
 	const { value: labeledWindow } = await $.state.get(labeledWindowRef)
-	const context = heldContext === undefined ? undefined : contextWithLabeledWindowOf(heldContext, labeledWindow?.tokens ?? null)
+	// A context stored before the buffer was recorded has no bufferTokens.
+	const storedContext = heldContext === undefined ? undefined : { ...heldContext, bufferTokens: heldContext.bufferTokens ?? 0 }
+	const context = storedContext === undefined ? undefined : contextWithLabeledWindowOf(storedContext, labeledWindow?.tokens ?? null)
 	const { value: model } = await $.state.get(modelRef)
 	const { value: effort } = await $.state.get(effortRef)
 	const { value: limits = [] } = await $.state.get(limitsRef)

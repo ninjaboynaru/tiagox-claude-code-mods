@@ -45,6 +45,7 @@ export function contextWithLabeledWindowOf(context: ContextReading, labeledWindo
 	const hasCompactPart = context.compactTokens > 0
 	const compactStartTokens = context.windowTokens - context.compactTokens
 	const compactTokens = hasCompactPart ? Math.max(0, windowTokens - compactStartTokens) : 0
+	const bufferTokens = Math.min(context.bufferTokens, compactTokens)
 
-	return { usedTokens: context.usedTokens, windowTokens, compactTokens }
+	return { usedTokens: context.usedTokens, windowTokens, compactTokens, bufferTokens }
 }
