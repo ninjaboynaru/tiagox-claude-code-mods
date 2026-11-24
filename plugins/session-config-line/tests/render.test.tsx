@@ -36,11 +36,37 @@ describe('the prompt hint', () => {
 			'▬'.repeat(10),
 			'▬'.repeat(7),
 			'▬'.repeat(3),
-			' 50% [200k] · claude-fable-5-2 · Weekly Usage: 52%',
+			' 50%/84% [200k] · claude-fable-5-2 · Weekly Usage: 52%',
 			'engine',
 		])
 		expect(texts.slice(0, 3).map((text) => text.props.color)).toEqual(['#3b6ea5', '#c8d6e5', '#8b1a1a'])
 		expect(texts[3]?.props.dimColor).toBe(true)
+	})
+})
+
+describe('the percentage', () => {
+	test('shows only the used percentage while auto-compact is off', async ($, on) => {
+		on('ui.render', engineRowOf)
+		on('session.start', () => ({ cwd: '/' }))
+		on('session.model', () => ({ value: 'claude-fable-5-2' }))
+		on('session.usage', () => ({
+			value: {
+				startedAt: 0,
+				context: { tokens: 100_000, window: 200_000, percent: 50, breakdown: { ...BREAKDOWN, isAutoCompactEnabled: false } },
+				rateLimits: [],
+			},
+		}))
+		await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+		const ui = await $.ui.mount({
+			plugin: 'session-config-line',
+			surface: 'terminal',
+			component: 'PromptHint',
+			props: { isDraft: false, isWorking: false, hint: '? for shortcuts' },
+		})
+		const texts = await ui.findAll({ type: 'Text' })
+
+		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(10), '▬'.repeat(10), '', ' 50% [200k] · claude-fable-5-2', 'engine'])
 	})
 })
 
@@ -66,7 +92,7 @@ describe('the usage limits', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts[3]?.text).toBe(' 50% [200k] · moonshotai/Kimi-K3.1-Pro')
+		expect(texts[3]?.text).toBe(' 50%/84% [200k] · moonshotai/Kimi-K3.1-Pro')
 	})
 })
 
@@ -93,7 +119,7 @@ describe('the context window', () => {
 		})
 		const texts = await ui.findAll({ type: 'Text' })
 
-		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '▬'.repeat(13), ' 20% [500k] · z-ai/glm-5.3', 'engine'])
+		expect(texts.map((text) => text.text)).toEqual(['▬'.repeat(4), '▬'.repeat(3), '▬'.repeat(13), ' 20%/33% [500k] · z-ai/glm-5.3', 'engine'])
 	})
 })
 

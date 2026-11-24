@@ -1,6 +1,6 @@
 import { describe, expect, test, tier } from 'claude-code/testing'
 
-import { barWidthsOf, percentUsedOf, windowLabelOf } from '../hooks/bar-widths.js'
+import { barWidthsOf, compactPercentOf, percentTextOf, percentUsedOf, windowLabelOf } from '../hooks/bar-widths.js'
 
 tier('user')
 
@@ -37,5 +37,27 @@ describe('windowLabelOf', () => {
 
 	test('gives no label for a window of zero', async () => {
 		expect(windowLabelOf(0)).toBe('')
+	})
+})
+
+describe('compactPercentOf', () => {
+	test('gives the point in the window where auto-compaction starts', async () => {
+		expect(compactPercentOf(200_000, 33_000)).toBe(84)
+		expect(compactPercentOf(1_000_000, 400_000)).toBe(60)
+	})
+
+	test('gives no point while auto-compact is off or the window is unknown', async () => {
+		expect(compactPercentOf(200_000, 0)).toBeNull()
+		expect(compactPercentOf(0, 33_000)).toBeNull()
+	})
+})
+
+describe('percentTextOf', () => {
+	test('writes the used and auto-compact percentages before the window size', async () => {
+		expect(percentTextOf(120_000, 1_000_000, 400_000)).toBe('12%/60% [1m]')
+	})
+
+	test('writes only the used percentage while auto-compact is off', async () => {
+		expect(percentTextOf(120_000, 1_000_000, 0)).toBe('12% [1m]')
 	})
 })

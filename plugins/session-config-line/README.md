@@ -18,16 +18,18 @@ claude plugin install session-config-line@tiagox-claude-code-mods
 The plugin has no settings and no commands. Once it is installed, it draws one row in the terminal, above the hint line under the prompt box, with one blank row above it:
 
 ```text
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ 15% [1m] · claude-sonnet-5-5 · medium · Weekly Usage: 52%
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ 15%/84% [1m] · claude-sonnet-5-5 · medium · Weekly Usage: 52%
 ```
 
 ### Context bar
 
 The bar is 20 cells wide. The used part is blue (`#3b6ea5`), the free part is light blue (`#c8d6e5`), and the last part, in dark red (`#8b1a1a`), runs from the point where auto-compaction starts to the end of the context window. The free space between the blue and the red is what is left before auto-compaction, and when auto-compact is off there is no red part.
 
+The text after the bar gives the same two points as percentages of the context window. In `12%/60% [1m]`, 12% of the window is in use and auto-compaction starts at 60%. When auto-compact is off, only the used percentage appears, such as `12% [1m]`.
+
 ### Context window of a custom model
 
-Claude Code assumes a context window for a model ID it does not recognize, such as a model served through an LLM gateway, and the bar and the percentage are drawn against that assumed window. To draw them against the model's real window, end the model's `label` in the [`modelPicker`](https://code.claude.com/docs/en/settings-reference#modelpicker) setting with the window in square brackets, in thousands (`k`) or millions (`m`) of tokens:
+Claude Code assumes a context window for a model ID it does not recognize, such as a model served through an LLM gateway, and the bar and the percentages are drawn against that assumed window. To draw them against the model's real window, end the model's `label` in the [`modelPicker`](https://code.claude.com/docs/en/settings-reference#modelpicker) setting with the window in square brackets, in thousands (`k`) or millions (`m`) of tokens:
 
 ```json
 {
@@ -45,7 +47,7 @@ The suffix changes only what this plugin draws. Claude Code still compacts the c
 
 After the bar come four values, separated by dots:
 
-- The percentage of the context window in use, followed by the size of the window in square brackets, in thousands (`k`) or millions (`m`) of tokens, such as `36% [1m]`.
+- The percentage of the context window in use and the percentage where auto-compaction starts, separated by a slash, followed by the size of the window in square brackets, in thousands (`k`) or millions (`m`) of tokens, such as `36%/84% [1m]`. When auto-compact is off, the slash and the second percentage are left out.
 - The model ID.
 - The effort level.
 - The weekly usage limit.

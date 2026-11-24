@@ -39,3 +39,16 @@ export function percentUsedOf(usedTokens: number | null, windowTokens: number): 
 
 	return Math.round((usedTokens / windowTokens) * 100)
 }
+
+export function compactPercentOf(windowTokens: number, compactTokens: number): number | null {
+	if (compactTokens <= 0 || windowTokens <= 0) return null
+
+	return Math.round(((windowTokens - compactTokens) / windowTokens) * 100)
+}
+
+export function percentTextOf(usedTokens: number | null, windowTokens: number, compactTokens: number): string {
+	const compactPercent = compactPercentOf(windowTokens, compactTokens)
+	const percents = `${percentUsedOf(usedTokens, windowTokens)}%${compactPercent === null ? '' : `/${compactPercent}%`}`
+
+	return `${percents} ${windowLabelOf(windowTokens)}`.trim()
+}
