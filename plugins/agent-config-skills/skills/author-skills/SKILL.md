@@ -29,7 +29,7 @@ These are the concepts, categories, entities, terms, and relationships used in t
 
 - **Standards skill**: A skill that holds standards, which are rules that a kind of work, such as code or writing, must adhere to.
 
-- **SOP skill**: A skill that holds one or more SOPs.
+- **SOP skill**: A skill that holds only SOPs, or that is entirely one strict, ordered set of steps.
 
 - **SOP**: A standard operating procedure, also called a procedure, which is a formal, discrete set of steps that forms a workflow an agent follows to accomplish a goal.
 
@@ -42,7 +42,7 @@ Name a skill by what it holds, with one of these prefixes:
 | Prefix | What the skill holds | Example |
 |--------|----------------------|---------|
 | `standards-{subject}` | The standards for one subject | `standards-code` |
-| `sop-{name}` | One or more SOPs | `sop-code-review` |
+| `sop-{name}` | Only SOPs, or one strict, ordered set of steps | `sop-code-review` |
 | `author-{type}` | How one kind of content is written | `author-sop` |
 | `cmd-{category}` | A command | `cmd-git-commit` |
 | `skill-{category}` | Anything else | `skill-tools-postman` |
@@ -68,7 +68,7 @@ The `author-standards` skill contains instructions for how to write standards, t
 
 ### SOP Skills
 
-An SOP skill holds one or more SOPs. An SOP is a standard operating procedure, and SOPs are sometimes referred to simply as procedures.
+An SOP skill holds only SOPs, also called procedures, or is entirely one strict, ordered set of steps. Give a skill that holds an SOP beside other content, such as standards or usage instructions, another prefix, such as `skill-`.
 
 The `author-sop` skill owns the format of an SOP. Load it and follow it when you write or edit an SOP skill, or a skill that contains SOPs, along with these rules:
 
